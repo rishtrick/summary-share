@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SummaryShare - NMU Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
+    <style>
+        .hidden { display: none !important; }
+        #progressBar { transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        /* Smooth progress line for download button */
+        .dl-bar { transition: width 0.2s linear; }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-100 font-sans text-slate-900">
+
+    <nav class="bg-white shadow-sm border-b sticky top-0 z-40">
+        <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="bg-indigo-600 p-1.5 rounded-lg text-white font-bold italic">SS</div>
+                <span class="font-bold text-xl text-slate-800">SummaryShare</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <button id="mainUploadBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold hover:bg-indigo-700 shadow-md transition">+ Upload</button>
+                <button id="logoutBtn" class="hidden text-slate-400 hover:text-red-500 px-2"><i class="fas fa-sign-out-alt text-xl"></i></button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-5xl mx-auto px-4 py-8">
+        <div class="space-y-4 mb-8">
+            <input type="text" id="searchInput" placeholder="Search title or description..." class="w-full p-4 rounded-2xl border border-slate-200 bg-white outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <select id="filterModule" class="p-3 rounded-xl border bg-white"><option value="">All Modules</option><option value="CVS">CVS</option><option value="BLOOD">BLOOD</option><option value="RESP">RESP</option></select>
+                <select id="filterSubject" class="p-3 rounded-xl border bg-white">
+                    <option value="">All Subjects</option>
+                    <option value="ANATOMY">ANATOMY</option><option value="HISTOLOGY">HISTOLOGY</option><option value="EMBRYOLOGY">EMBRYOLOGY</option>
+                    <option value="MICROBIOLOGY">MICROBIOLOGY</option><option value="PATHOLOGY">PATHOLOGY</option><option value="PARASITELOGY">PARASITELOGY</option>
+                    <option value="PHARMACOLOGY">PHARMACOLOGY</option><option value="PHYSIOLOGY">PHYSIOLOGY</option><option value="BIOCHEMISTRY">BIOCHEMISTRY</option>
+                </select>
+                <select id="filterLecture" class="p-3 rounded-xl border bg-white"><option value="">All Lectures</option></select>
+            </div>
+        </div>
+        <div id="feed" class="grid gap-4"></div>
+    </main>
+
+    <div id="authModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-[2.5rem] shadow-2xl max-w-md w-full text-center">
+            <h2 class="text-2xl font-bold text-slate-800 mb-2">Student Login</h2>
+            <p class="text-slate-500 mb-6 text-sm">Please use your <b>@nmu.edu.eg</b> email</p>
+            <div class="space-y-3">
+                <input type="email" id="authEmail" placeholder="name@nmu.edu.eg" class="w-full p-4 rounded-2xl border bg-slate-50 outline-none">
+                <input type="password" id="authPass" placeholder="Password (6+ chars)" class="w-full p-4 rounded-2xl border bg-slate-50 outline-none">
+                <div class="flex gap-2">
+                    <button id="loginBtn" class="flex-1 bg-indigo-600 text-white py-4 rounded-2xl font-bold">Login</button>
+                    <button id="signupBtn" class="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold">Sign Up</button>
+                </div>
+                <button id="closeAuth" class="text-slate-400 text-sm mt-4">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="uploadModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-[2rem] p-8 max-w-lg w-full shadow-2xl overflow-y-auto max-h-[90vh]">
+            <h2 class="text-2xl font-bold text-slate-800 mb-4">Post Summary</h2>
+            <div class="space-y-4">
+                <input type="text" id="docTitle" placeholder="Title" class="w-full p-3.5 rounded-xl border bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-500">
+                <textarea id="docDesc" placeholder="Description..." class="w-full p-3.5 rounded-xl border bg-slate-50 outline-none h-24 resize-none"></textarea>
+                <div class="grid grid-cols-2 gap-3">
+                    <select id="docModule" class="p-3.5 rounded-xl bg-slate-50"><option value="">Module</option><option value="CVS">CVS</option><option value="BLOOD">BLOOD</option><option value="RESP">RESP</option></select>
+                    <select id="docSubject" class="p-3.5 rounded-xl bg-slate-50"><option value="">Subject</option>
+                        <option value="ANATOMY">ANATOMY</option><option value="HISTOLOGY">HISTOLOGY</option><option value="EMBRYOLOGY">EMBRYOLOGY</option>
+                        <option value="MICROBIOLOGY">MICROBIOLOGY</option><option value="PATHOLOGY">PATHOLOGY</option><option value="PARASITELOGY">PARASITELOGY</option>
+                        <option value="PHARMACOLOGY">PHARMACOLOGY</option><option value="PHYSIOLOGY">PHYSIOLOGY</option><option value="BIOCHEMISTRY">BIOCHEMISTRY</option>
+                    </select>
+                </div>
+                <select id="docLecture" class="w-full p-3.5 rounded-xl bg-slate-50"><option value="">Select Lecture</option><option value="NOT A LECTURE">NOT A LECTURE</option></select>
+                <div class="p-4 border-2 border-dashed rounded-xl bg-slate-50"><input type="file" id="docFile" class="w-full text-sm"></div>
+                
+                <div id="progressArea" class="hidden">
+                    <div class="flex justify-between text-xs font-bold text-indigo-600 mb-1"><span>Uploading...</span><span id="percentText">0%</span></div>
+                    <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden"><div id="progressBar" class="bg-indigo-600 h-full w-0"></div></div>
+                </div>
+
+                <button id="saveBtn" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg disabled:opacity-50">Post to Feed</button>
+                <button id="closeUpload" class="w-full text-slate-400 py-2">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBYpA3phiRPlssjDmMp2u9_oqo3YcvQHaU",
+            authDomain: "eu-summaryshare.firebaseapp.com",
+            projectId: "eu-summaryshare",
+            storageBucket: "eu-summaryshare.firebasestorage.app",
+            messagingSenderId: "835602685197",
+            appId: "1:835602685197:web:ba7219fdeda1c55964e444"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+        const auth = firebase.auth();
+
+        let allSummaries = [];
+
+        // Fill Lectures
+        const lecs = document.querySelectorAll('#filterLecture, #docLecture');
+        for(let i=1; i<=50; i++) {
+            lecs.forEach(s => { const o = document.createElement('option'); o.value = i; o.innerText = `Lecture ${i}`; s.appendChild(o); });
+        }
+
+        // Auth Listener
+        auth.onAuthStateChanged(user => {
+            document.getElementById('logoutBtn').classList.toggle('hidden', !user);
+            renderFeed(allSummaries);
+        });
+
+        // Load Feed
+        db.collection("summaries").orderBy("timestamp", "desc").onSnapshot(snap => {
+            allSummaries = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            applyFilters();
+        });
+
+        function renderFeed(items) {
+            const feed = document.getElementById('feed');
+            const uid = auth.currentUser ? auth.currentUser.uid : null;
+            feed.innerHTML = items.length ? '' : '<div class="p-12 text-center text-slate-400">No summaries found.</div>';
+            
+            items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "bg-white p-6 rounded-2xl shadow-sm border border-slate-50";
+                const isOwner = uid === item.ownerId;
+                
+                // Real Preview URL using Google Docs Viewer
+                const previewUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(item.fileUrl)}&embedded=true`;
+
+                card.innerHTML = `
+                    <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-xl shrink-0"><i class="fas fa-file-pdf"></i></div>
+                            <div>
+                                <h3 class="font-bold text-slate-800">${item.title}</h3>
+                                <p class="text-xs text-slate-400">By ${item.authorEmail ? item.authorEmail.split('@')[0] : 'Contributor'}</p>
+                                <div class="flex flex-wrap gap-2 mt-2">
+                                    <span class="text-[10px] bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full font-bold uppercase">${item.module}</span>
+                                    <span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold uppercase">${item.subject}</span>
+                                    <span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold uppercase">Lec ${item.lecture}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 items-center">
+                            ${isOwner ? `<button onclick="deleteFile('${item.id}', '${item.fileUrl}')" class="text-red-400 px-2 hover:bg-red-50 p-2 rounded-lg"><i class="fas fa-trash-alt"></i></button>` : ''}
+                            <a href="${previewUrl}" target="_blank" class="px-4 py-2 bg-slate-100 rounded-xl font-bold text-sm text-slate-600 hover:bg-slate-200">View</a>
+                            
+                            <button onclick="downloadWithProgress('${item.fileUrl}', '${item.title}.pdf', this)" 
+                                    class="relative overflow-hidden px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold text-sm shadow-md min-w-[100px] hover:bg-indigo-700 transition">
+                                <span class="btn-text">Download</span>
+                                <div class="dl-bar absolute bottom-0 left-0 h-1 bg-indigo-300 w-0"></div>
+                            </button>
+                        </div>
+                    </div>
+                    ${item.description ? `<p class="mt-4 text-sm text-slate-500 italic border-l-2 border-indigo-200 pl-3">${item.description}</p>` : ''}
+                `;
+                feed.appendChild(card);
+            });
+        }
+
+        // New Download with Progress Logic
+        async function downloadWithProgress(url, filename, btn) {
+            const textSpan = btn.querySelector('.btn-text');
+            const progressBar = btn.querySelector('.dl-bar');
+            const originalText = textSpan.innerText;
+            
+            try {
+                btn.disabled = true;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Network response was not ok');
+
+                const reader = response.body.getReader();
+                const contentLength = +response.headers.get('Content-Length');
+                
+                let receivedLength = 0;
+                let chunks = []; 
+                
+                while(true) {
+                    const {done, value} = await reader.read();
+                    if (done) break;
+
+                    chunks.push(value);
+                    receivedLength += value.length;
+
+                    if (contentLength) {
+                        const percent = Math.round((receivedLength / contentLength) * 100);
+                        textSpan.innerText = percent + '%';
+                        progressBar.style.width = percent + '%';
+                    }
+                }
+
+                const blob = new Blob(chunks);
+                const blobUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = blobUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(blobUrl);
+                
+                textSpan.innerText = "Done!";
+                progressBar.style.width = '100%';
+
+            } catch (err) {
+                console.error(err);
+                alert("Download failed. Make sure CORS is configured in Firebase.");
+                textSpan.innerText = "Error";
+            } finally {
+                setTimeout(() => {
+                    textSpan.innerText = originalText;
+                    progressBar.style.width = '0%';
+                    btn.disabled = false;
+                }, 2000);
+            }
+        }
+
+        // Auth Actions
+        document.getElementById('signupBtn').onclick = async () => {
+            const email = document.getElementById('authEmail').value;
+            const pass = document.getElementById('authPass').value;
+            if(!email.endsWith('@nmu.edu.eg')) return alert("Use @nmu.edu.eg email!");
+            try { await auth.createUserWithEmailAndPassword(email, pass); document.getElementById('authModal').classList.add('hidden'); } 
+            catch(e) { alert(e.message); }
+        };
+
+        document.getElementById('loginBtn').onclick = async () => {
+            try { await auth.signInWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPass').value); document.getElementById('authModal').classList.add('hidden'); } 
+            catch(e) { alert("Login failed."); }
+        };
+
+        // Upload Action
+        document.getElementById('saveBtn').onclick = async () => {
+            const file = document.getElementById('docFile').files[0];
+            const title = document.getElementById('docTitle').value;
+            if (!file || !title) return alert("File and Title are required!");
+
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = true;
+            document.getElementById('progressArea').classList.remove('hidden');
+
+            const ref = storage.ref(`summaries/${Date.now()}_${file.name}`);
+            const task = ref.put(file);
+
+            task.on('state_changed', 
+                s => { 
+                    const p = (s.bytesTransferred / s.totalBytes) * 100;
+                    document.getElementById('progressBar').style.width = p + '%';
+                    document.getElementById('percentText').innerText = Math.round(p) + '%';
+                },
+                e => { 
+                    alert("Upload failed: " + e.message); 
+                    btn.disabled = false; 
+                    document.getElementById('progressArea').classList.add('hidden');
+                },
+                async () => {
+                    const url = await task.snapshot.ref.getDownloadURL();
+                    try {
+                        await db.collection("summaries").add({
+                            title, fileUrl: url, 
+                            description: document.getElementById('docDesc').value,
+                            module: document.getElementById('docModule').value,
+                            subject: document.getElementById('docSubject').value,
+                            lecture: document.getElementById('docLecture').value,
+                            ownerId: auth.currentUser.uid,
+                            authorEmail: auth.currentUser.email,
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        document.getElementById('uploadModal').classList.add('hidden');
+                        document.getElementById('docTitle').value = "";
+                        document.getElementById('docDesc').value = "";
+                        document.getElementById('docFile').value = "";
+                    } catch(err) {
+                        alert("Database error: Make sure you use @nmu.edu.eg email!");
+                    }
+                    btn.disabled = false;
+                    document.getElementById('progressArea').classList.add('hidden');
+                    document.getElementById('progressBar').style.width = '0%';
+                }
+            );
+        };
+
+        async function deleteFile(id, url) {
+            if(!confirm("Delete forever?")) return;
+            try {
+                await db.collection("summaries").doc(id).delete();
+                try { await storage.refFromURL(url).delete(); } catch(e) {}
+            } catch(e) { alert("Permission denied."); }
+        }
+
+        function applyFilters() {
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            const mod = document.getElementById('filterModule').value;
+            const sub = document.getElementById('filterSubject').value;
+            const filtered = allSummaries.filter(i => {
+                const text = (i.title + (i.description || "")).toLowerCase().includes(term);
+                return text && (mod === "" || i.module === mod) && (sub === "" || i.subject === sub);
+            });
+            renderFeed(filtered);
+        }
+
+        document.getElementById('mainUploadBtn').onclick = () => {
+            if(auth.currentUser) document.getElementById('uploadModal').classList.remove('hidden');
+            else document.getElementById('authModal').classList.remove('hidden');
+        };
+        document.getElementById('logoutBtn').onclick = () => auth.signOut();
+        document.getElementById('closeAuth').onclick = () => document.getElementById('authModal').classList.add('hidden');
+        document.getElementById('closeUpload').onclick = () => document.getElementById('uploadModal').classList.add('hidden');
+        ['searchInput', 'filterModule', 'filterSubject'].forEach(id => document.getElementById(id).addEventListener('input', applyFilters));
+    </script>
+</body>
+</html>
