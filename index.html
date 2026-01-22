@@ -17,7 +17,6 @@
         #progressBar { transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
         .dl-bar { transition: width 0.2s linear; }
         .fav-active { color: #ef4444 !important; }
-        .auth-content { transition: all 0.3s ease; }
     </style>
 </head>
 <body class="min-h-screen bg-slate-100 font-sans text-slate-900">
@@ -57,18 +56,20 @@
         <div class="bg-white rounded-[2rem] p-8 max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div class="flex justify-between items-start mb-4">
                 <div class="w-full mr-4">
-                    <div class="flex items-center gap-2 group">
-                        <input type="text" id="profileNameInput" class="text-2xl font-bold text-slate-800 bg-transparent border-b border-transparent focus:border-indigo-600 outline-none w-full">
-                        <button id="updateNameBtn" class="text-indigo-600 opacity-0 group-hover:opacity-100 transition"><i class="fas fa-save"></i></button>
+                    <span class="text-[10px] uppercase font-bold text-slate-400">Student Name</span>
+                    <div class="flex items-center gap-3">
+                        <input type="text" id="profileNameInput" disabled class="text-2xl font-bold text-slate-800 bg-transparent border-b-2 border-transparent outline-none w-full transition-all">
+                        <button id="editNameBtn" class="text-slate-400 hover:text-indigo-600 transition"><i class="fas fa-pen"></i></button>
+                        <button id="saveNameBtn" class="hidden text-green-500 hover:text-green-600 transition"><i class="fas fa-check-circle text-xl"></i></button>
                     </div>
-                    <p class="text-slate-400 text-[11px] mt-2 leading-tight">
-                        <i class="fas fa-shield-alt mr-1"></i> 
-                        Please ensure all contributions adhere to academic standards. Explicit content is strictly prohibited; accounts are authenticated via NMU credentials and remain traceable.
+                    <p class="text-slate-400 text-[11px] mt-4 leading-tight italic">
+                        Note: Explicit or inappropriate content is strictly prohibited; accounts are authenticated via NMU credentials and are fully traceable.
                     </p>
                 </div>
                 <button id="closeProfile" class="text-slate-400 hover:text-slate-600 shrink-0"><i class="fas fa-times text-xl"></i></button>
             </div>
-            <div class="flex gap-4 border-b mb-4 mt-4">
+            
+            <div class="flex gap-6 border-b mb-4">
                 <button id="tabMyUploads" class="pb-2 border-b-2 border-indigo-600 text-indigo-600 font-bold text-sm">My Uploads</button>
                 <button id="tabSaved" class="pb-2 border-b-2 border-transparent text-slate-400 font-bold text-sm">Saved</button>
             </div>
@@ -83,16 +84,16 @@
                 <button id="tabSignup" class="flex-1 py-4 font-bold text-slate-400 border-b-2 border-transparent">Sign Up</button>
             </div>
             <div class="p-8">
-                <div id="loginForm" class="auth-content space-y-4">
+                <div id="loginForm" class="space-y-4">
                     <input type="email" id="loginEmail" placeholder="name@nmu.edu.eg" class="w-full p-4 rounded-2xl border bg-slate-50 outline-none">
                     <input type="password" id="loginPass" placeholder="Password" class="w-full p-4 rounded-2xl border bg-slate-50 outline-none">
-                    <button id="loginBtnAction" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg">Login</button>
+                    <button id="loginBtnAction" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold">Login</button>
                 </div>
-                <div id="signupForm" class="auth-content hidden space-y-4">
+                <div id="signupForm" class="hidden space-y-4">
                     <input type="text" id="signupName" placeholder="Full Name" class="w-full p-4 rounded-2xl border bg-slate-50 outline-none">
                     <input type="email" id="signupEmail" placeholder="name@nmu.edu.eg" class="w-full p-4 rounded-2xl border bg-slate-50 outline-none">
                     <input type="password" id="signupPass" placeholder="Password (6+ chars)" class="w-full p-4 rounded-2xl border bg-slate-50 outline-none">
-                    <button id="signupBtnAction" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg">Sign Up</button>
+                    <button id="signupBtnAction" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold">Sign Up</button>
                 </div>
                 <button id="closeAuth" class="w-full text-slate-400 text-sm mt-6">Cancel</button>
             </div>
@@ -103,22 +104,15 @@
         <div class="bg-white rounded-[2rem] p-8 max-w-lg w-full shadow-2xl overflow-y-auto max-h-[90vh]">
             <h2 class="text-2xl font-bold text-slate-800 mb-4">Post Summary</h2>
             <div class="space-y-4">
-                <input type="text" id="docTitle" placeholder="Title" class="w-full p-3.5 rounded-xl border bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-500">
+                <input type="text" id="docTitle" placeholder="Title" class="w-full p-3.5 rounded-xl border bg-slate-50 outline-none">
                 <textarea id="docDesc" placeholder="Description..." class="w-full p-3.5 rounded-xl border bg-slate-50 outline-none h-24 resize-none"></textarea>
                 <div class="grid grid-cols-2 gap-3">
                     <select id="docModule" class="p-3.5 rounded-xl bg-slate-50"><option value="">Module</option><option value="CVS">CVS</option><option value="BLOOD">BLOOD</option><option value="RESP">RESP</option></select>
-                    <select id="docSubject" class="p-3.5 rounded-xl bg-slate-50">
-                        <option value="">Subject</option>
-                        <option value="ANATOMY">ANATOMY</option><option value="HISTOLOGY">HISTOLOGY</option><option value="EMBRYOLOGY">EMBRYOLOGY</option>
-                        <option value="MICROBIOLOGY">MICROBIOLOGY</option><option value="PATHOLOGY">PATHOLOGY</option><option value="PARASITELOGY">PARASITELOGY</option>
-                        <option value="PHARMACOLOGY">PHARMACOLOGY</option><option value="PHYSIOLOGY">PHYSIOLOGY</option><option value="BIOCHEMISTRY">BIOCHEMISTRY</option>
-                    </select>
+                    <select id="docSubject" class="p-3.5 rounded-xl bg-slate-50"><option value="">Subject</option><option value="ANATOMY">ANATOMY</option><option value="HISTOLOGY">HISTOLOGY</option><option value="EMBRYOLOGY">EMBRYOLOGY</option><option value="MICROBIOLOGY">MICROBIOLOGY</option><option value="PATHOLOGY">PATHOLOGY</option><option value="PARASITELOGY">PARASITELOGY</option><option value="PHARMACOLOGY">PHARMACOLOGY</option><option value="PHYSIOLOGY">PHYSIOLOGY</option><option value="BIOCHEMISTRY">BIOCHEMISTRY</option></select>
                 </div>
                 <select id="docLecture" class="w-full p-3.5 rounded-xl bg-slate-50"><option value="">Select Lecture</option></select>
                 <div class="p-4 border-2 border-dashed rounded-xl bg-slate-50"><input type="file" id="docFile" class="w-full text-sm"></div>
-                <div id="progressArea" class="hidden">
-                    <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden"><div id="progressBar" class="bg-indigo-600 h-full w-0"></div></div>
-                </div>
+                <div id="progressArea" class="hidden"><div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden"><div id="progressBar" class="bg-indigo-600 h-full w-0"></div></div></div>
                 <button id="saveBtn" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg">Post to Feed</button>
                 <button id="closeUpload" class="w-full text-slate-400 py-2">Cancel</button>
             </div>
@@ -126,7 +120,6 @@
     </div>
 
     <script>
-        // --- INITIALIZATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyBYpA3phiRPlssjDmMp2u9_oqo3YcvQHaU",
             authDomain: "eu-summaryshare.firebaseapp.com",
@@ -145,7 +138,6 @@
         const lecs = document.querySelectorAll('#filterLecture, #docLecture');
         for(let i=1; i<=50; i++) lecs.forEach(s => { const o = document.createElement('option'); o.value = i; o.innerText = `Lecture ${i}`; s.appendChild(o); });
 
-        // --- AUTH OBSERVER ---
         auth.onAuthStateChanged(async user => {
             document.getElementById('logoutBtn').classList.toggle('hidden', !user);
             document.getElementById('profileBtn').classList.toggle('hidden', !user);
@@ -162,17 +154,14 @@
             applyFilters();
         });
 
-        // --- RENDER FEED ---
         function renderFeed(items) {
             const feed = document.getElementById('feed');
             feed.innerHTML = items.length ? '' : '<div class="p-12 text-center text-slate-400">No summaries found.</div>';
-            
             items.forEach(item => {
                 const isFav = userFavs.includes(item.id);
                 const isOwner = auth.currentUser && auth.currentUser.uid === item.ownerId;
                 const card = document.createElement('div');
                 card.className = "bg-white p-6 rounded-2xl shadow-sm border border-slate-50 transition-all hover:shadow-md";
-                
                 card.innerHTML = `
                     <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
                         <div class="flex items-center gap-4">
@@ -180,117 +169,124 @@
                             <div>
                                 <h3 class="font-bold text-slate-800">${item.title}</h3>
                                 <div class="flex items-center gap-2 mt-1">
-                                    <span class="text-xs text-indigo-600 font-semibold">${item.authorName || 'Contributor'}</span>
+                                    <span class="text-xs text-slate-400 uppercase font-bold">Name:</span>
+                                    <span class="text-xs text-indigo-600 font-bold">${item.authorName || 'Contributor'}</span>
                                     <span class="text-[10px] bg-slate-100 text-slate-400 px-2 py-0.5 rounded-md"><i class="fas fa-download mr-1"></i>${item.downloads || 0}</span>
                                 </div>
                             </div>
                         </div>
                         <div class="flex gap-2 items-center">
-                            <button onclick="toggleFavorite('${item.id}')" class="p-2 text-slate-300 hover:text-red-400 transition ${isFav ? 'fav-active' : ''}">
-                                <i class="${isFav ? 'fas' : 'far'} fa-heart text-xl"></i>
-                            </button>
+                            <button onclick="toggleFavorite('${item.id}')" class="p-2 text-slate-300 hover:text-red-400 transition ${isFav ? 'fav-active' : ''}"><i class="${isFav ? 'fas' : 'far'} fa-heart text-xl"></i></button>
                             ${isOwner ? `<button onclick="deleteFile('${item.id}', '${item.fileUrl}')" class="text-red-400 p-2 hover:bg-red-50 rounded-lg"><i class="fas fa-trash-alt"></i></button>` : ''}
                             <a href="https://docs.google.com/viewer?url=${encodeURIComponent(item.fileUrl)}&embedded=true" target="_blank" class="px-4 py-2 bg-slate-100 rounded-xl font-bold text-sm text-slate-600 hover:bg-slate-200">View</a>
-                            <button onclick="downloadWithCount('${item.id}', '${item.fileUrl}', '${item.title}.pdf', this)" class="relative overflow-hidden px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold text-sm shadow-md min-w-[100px] hover:bg-indigo-700 transition">
-                                <span class="btn-text">Download</span>
-                                <div class="dl-bar absolute bottom-0 left-0 h-1 bg-indigo-300 w-0"></div>
-                            </button>
+                            <button onclick="downloadWithCount('${item.id}', '${item.fileUrl}', '${item.title}.pdf', this)" class="relative overflow-hidden px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold text-sm shadow-md min-w-[100px] hover:bg-indigo-700 transition">Download</button>
                         </div>
-                    </div>
-                `;
+                    </div>`;
                 feed.appendChild(card);
             });
         }
 
-        // --- NEW ROBUST UPLOAD LOGIC ---
+        // --- DASHBOARD FILTERING FIX ---
+        function updateProfileList(tab = 'myUploads') {
+            const list = document.getElementById('profileList');
+            const user = auth.currentUser;
+            if(!user) return;
+
+            const items = tab === 'myUploads' 
+                ? allSummaries.filter(s => s.ownerId === user.uid) // Explicit link
+                : allSummaries.filter(s => userFavs.includes(s.id));
+
+            list.innerHTML = items.length ? '' : '<p class="text-center py-8 text-slate-400">No items found.</p>';
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.className = "flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100";
+                div.innerHTML = `<div class="truncate mr-2"><p class="font-bold text-slate-700 text-sm truncate">${item.title}</p></div>
+                    <div class="flex gap-2">
+                        <button onclick="downloadWithCount('${item.id}', '${item.fileUrl}', '${item.title}.pdf', this)" class="text-indigo-600 p-2"><i class="fas fa-download"></i></button>
+                    </div>`;
+                list.appendChild(div);
+            });
+        }
+
+        // --- NAME CHANGE UI ---
+        document.getElementById('editNameBtn').onclick = () => {
+            const input = document.getElementById('profileNameInput');
+            input.disabled = false;
+            input.classList.add('border-indigo-600');
+            input.focus();
+            document.getElementById('editNameBtn').classList.add('hidden');
+            document.getElementById('saveNameBtn').classList.remove('hidden');
+        };
+
+        document.getElementById('saveNameBtn').onclick = async () => {
+            const input = document.getElementById('profileNameInput');
+            const newName = input.value.trim();
+            if(!newName) return alert("Name cannot be empty");
+            
+            try {
+                await db.collection("users").doc(auth.currentUser.uid).update({ fullName: newName });
+                currentUserData.fullName = newName;
+                input.disabled = true;
+                input.classList.remove('border-indigo-600');
+                document.getElementById('editNameBtn').classList.remove('hidden');
+                document.getElementById('saveNameBtn').classList.add('hidden');
+                alert("Name updated successfully!");
+                renderFeed(allSummaries);
+            } catch(e) { alert("Error updating name."); }
+        };
+
+        // --- ROBUST UPLOAD ---
         document.getElementById('saveBtn').onclick = async () => {
             const user = auth.currentUser;
-            const file = document.getElementById('docFile').files[0];
-            const title = document.getElementById('docTitle').value;
-
-            if (!user || !user.emailVerified) return alert("Please verify your NMU email first.");
-            if (!file || !title) return alert("Title and File are required!");
+            const file = document.getElementById('docFile').files[0], title = document.getElementById('docTitle').value;
+            if (!user || !user.emailVerified) return alert("Verify your email first.");
+            if (!file || !title) return alert("Fields missing.");
 
             const btn = document.getElementById('saveBtn');
-            btn.disabled = true;
-            btn.innerText = "Processing...";
+            btn.disabled = true; btn.innerText = "Uploading...";
             document.getElementById('progressArea').classList.remove('hidden');
 
             try {
                 const ref = storage.ref(`summaries/${Date.now()}_${file.name}`);
                 const task = ref.put(file);
-
-                task.on('state_changed', 
-                    (snapshot) => {
-                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                        document.getElementById('progressBar').style.width = progress + '%';
-                    }, 
-                    (error) => {
-                        alert("Upload failed: " + error.message);
-                        resetUploadUI();
-                    }, 
-                    async () => {
-                        const url = await task.snapshot.ref.getDownloadURL();
-                        await db.collection("summaries").add({
-                            title, fileUrl: url,
-                            description: document.getElementById('docDesc').value,
-                            module: document.getElementById('docModule').value,
-                            subject: document.getElementById('docSubject').value,
-                            lecture: document.getElementById('docLecture').value,
-                            ownerId: user.uid,
-                            authorName: currentUserData?.fullName || "Student",
-                            downloads: 0,
-                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                        alert("Summary posted successfully!");
-                        resetUploadUI();
-                        document.getElementById('uploadModal').classList.add('hidden');
-                    }
-                );
-            } catch (err) {
-                alert("Error: " + err.message);
-                resetUploadUI();
-            }
+                task.on('state_changed', s => { 
+                    document.getElementById('progressBar').style.width = (s.bytesTransferred/s.totalBytes)*100 + '%';
+                }, null, async () => {
+                    const url = await task.snapshot.ref.getDownloadURL();
+                    await db.collection("summaries").add({
+                        title, fileUrl: url, description: document.getElementById('docDesc').value,
+                        module: document.getElementById('docModule').value, subject: document.getElementById('docSubject').value,
+                        lecture: document.getElementById('docLecture').value, ownerId: user.uid,
+                        authorName: currentUserData?.fullName || "Student", downloads: 0, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    resetUploadUI();
+                    document.getElementById('uploadModal').classList.add('hidden');
+                });
+            } catch (err) { alert(err.message); resetUploadUI(); }
         };
 
         function resetUploadUI() {
             const btn = document.getElementById('saveBtn');
-            btn.disabled = false;
-            btn.innerText = "Post to Feed";
+            btn.disabled = false; btn.innerText = "Post to Feed";
             document.getElementById('progressArea').classList.add('hidden');
             document.getElementById('progressBar').style.width = '0%';
-            document.getElementById('docTitle').value = "";
-            document.getElementById('docFile').value = "";
-            document.getElementById('docDesc').value = "";
+            document.getElementById('docTitle').value = ""; document.getElementById('docFile').value = "";
         }
 
-        // --- OTHER FUNCTIONS ---
         async function downloadWithCount(id, url, filename, btn) {
             db.collection("summaries").doc(id).update({ downloads: firebase.firestore.FieldValue.increment(1) });
-            try {
-                const response = await fetch(url);
-                const blob = await response.blob();
-                const a = document.createElement('a');
-                a.href = window.URL.createObjectURL(blob); a.download = filename; a.click();
-            } catch (e) { alert("Download failed."); }
+            try { const r = await fetch(url); const b = await r.blob(); const a = document.createElement('a'); a.href = window.URL.createObjectURL(b); a.download = filename; a.click(); } catch(e) {}
         }
 
-        document.getElementById('updateNameBtn').onclick = async () => {
-            const newName = document.getElementById('profileNameInput').value;
-            if(!newName) return;
-            await db.collection("users").doc(auth.currentUser.uid).update({ fullName: newName });
-            currentUserData.fullName = newName;
-            alert("Name updated!"); renderFeed(allSummaries);
-        };
+        async function deleteFile(id, url) { if(confirm("Delete permanently?")) { await db.collection("summaries").doc(id).delete(); try { await storage.refFromURL(url).delete(); } catch(e){} } }
 
         document.getElementById('signupBtnAction').onclick = async () => {
             const name = document.getElementById('signupName').value, email = document.getElementById('signupEmail').value, pass = document.getElementById('signupPass').value;
             if(!name || !email.endsWith('@nmu.edu.eg')) return alert("Use @nmu.edu.eg email!");
             try { 
-                const cred = await auth.createUserWithEmailAndPassword(email, pass);
-                await db.collection("users").doc(cred.user.uid).set({ fullName: name, email, favorites: [] });
-                await cred.user.sendEmailVerification();
-                alert("Verify your email!"); auth.signOut();
+                const c = await auth.createUserWithEmailAndPassword(email, pass);
+                await db.collection("users").doc(c.user.uid).set({ fullName: name, email, favorites: [] });
+                await c.user.sendEmailVerification(); alert("Verify your email!"); auth.signOut();
                 document.getElementById('authModal').classList.add('hidden');
             } catch(e) { alert(e.message); }
         };
@@ -321,13 +317,23 @@
             }));
         }
 
-        // UI Event Listeners
-        document.getElementById('profileBtn').onclick = () => { document.getElementById('profileModal').classList.remove('hidden'); document.getElementById('profileNameInput').value = currentUserData?.fullName || "Student"; };
+        document.getElementById('profileBtn').onclick = () => { 
+            document.getElementById('profileModal').classList.remove('hidden'); 
+            document.getElementById('profileNameInput').value = currentUserData?.fullName || "Student";
+            updateProfileList('myUploads');
+        };
+        document.getElementById('tabMyUploads').onclick = (e) => { document.getElementById('tabSaved').className = "pb-2 border-b-2 border-transparent text-slate-400 font-bold text-sm"; e.target.className = "pb-2 border-b-2 border-indigo-600 text-indigo-600 font-bold text-sm"; updateProfileList('myUploads'); };
+        document.getElementById('tabSaved').onclick = (e) => { document.getElementById('tabMyUploads').className = "pb-2 border-b-2 border-transparent text-slate-400 font-bold text-sm"; e.target.className = "pb-2 border-b-2 border-indigo-600 text-indigo-600 font-bold text-sm"; updateProfileList('saved'); };
         document.getElementById('tabLogin').onclick = () => { tabLogin.className = "flex-1 py-4 font-bold text-indigo-600 border-b-2 border-indigo-600"; tabSignup.className = "flex-1 py-4 font-bold text-slate-400 border-b-2 border-transparent"; loginForm.classList.remove('hidden'); signupForm.classList.add('hidden'); };
         document.getElementById('tabSignup').onclick = () => { tabSignup.className = "flex-1 py-4 font-bold text-indigo-600 border-b-2 border-indigo-600"; tabLogin.className = "flex-1 py-4 font-bold text-slate-400 border-b-2 border-transparent"; signupForm.classList.remove('hidden'); loginForm.classList.add('hidden'); };
         document.getElementById('closeAuth').onclick = () => document.getElementById('authModal').classList.add('hidden');
         document.getElementById('closeUpload').onclick = () => document.getElementById('uploadModal').classList.add('hidden');
-        document.getElementById('closeProfile').onclick = () => document.getElementById('profileModal').classList.add('hidden');
+        document.getElementById('closeProfile').onclick = () => {
+            document.getElementById('profileModal').classList.add('hidden');
+            document.getElementById('profileNameInput').disabled = true;
+            document.getElementById('saveNameBtn').classList.add('hidden');
+            document.getElementById('editNameBtn').classList.remove('hidden');
+        };
         document.getElementById('logoutBtn').onclick = () => auth.signOut();
         document.getElementById('mainUploadBtn').onclick = () => !auth.currentUser ? document.getElementById('authModal').classList.remove('hidden') : document.getElementById('uploadModal').classList.remove('hidden');
         ['searchInput', 'filterModule', 'filterSubject'].forEach(id => document.getElementById(id).addEventListener('input', applyFilters));
