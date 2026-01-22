@@ -58,17 +58,16 @@
             <div class="flex justify-between items-start mb-4">
                 <div class="w-full mr-4">
                     <div class="flex items-center gap-2 group">
-                        <input type="text" id="profileNameInput" class="text-2xl font-bold text-slate-800 bg-transparent border-b border-transparent focus:border-indigo-600 outline-none w-full" title="Click to edit your name">
+                        <input type="text" id="profileNameInput" class="text-2xl font-bold text-slate-800 bg-transparent border-b border-transparent focus:border-indigo-600 outline-none w-full">
                         <button id="updateNameBtn" class="text-indigo-600 opacity-0 group-hover:opacity-100 transition"><i class="fas fa-save"></i></button>
                     </div>
                     <p class="text-slate-400 text-[11px] mt-2 leading-tight">
                         <i class="fas fa-shield-alt mr-1"></i> 
-                        Please ensure all contributions and identifiers adhere to academic standards. Explicit or inappropriate content is strictly prohibited; accounts are authenticated via NMU credentials and remain traceable.
+                        Please ensure all contributions adhere to academic standards. Explicit content is strictly prohibited; accounts are authenticated via NMU credentials and remain traceable.
                     </p>
                 </div>
                 <button id="closeProfile" class="text-slate-400 hover:text-slate-600 shrink-0"><i class="fas fa-times text-xl"></i></button>
             </div>
-            
             <div class="flex gap-4 border-b mb-4 mt-4">
                 <button id="tabMyUploads" class="pb-2 border-b-2 border-indigo-600 text-indigo-600 font-bold text-sm">My Uploads</button>
                 <button id="tabSaved" class="pb-2 border-b-2 border-transparent text-slate-400 font-bold text-sm">Saved</button>
@@ -90,7 +89,7 @@
                     <button id="loginBtnAction" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg">Login</button>
                 </div>
                 <div id="signupForm" class="auth-content hidden space-y-4">
-                    <input type="text" id="signupName" placeholder="Display Name (Real Name)" class="w-full p-4 rounded-2xl border bg-slate-50 outline-none">
+                    <input type="text" id="signupName" placeholder="Full Name" class="w-full p-4 rounded-2xl border bg-slate-50 outline-none">
                     <input type="email" id="signupEmail" placeholder="name@nmu.edu.eg" class="w-full p-4 rounded-2xl border bg-slate-50 outline-none">
                     <input type="password" id="signupPass" placeholder="Password (6+ chars)" class="w-full p-4 rounded-2xl border bg-slate-50 outline-none">
                     <button id="signupBtnAction" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg">Sign Up</button>
@@ -117,7 +116,9 @@
                 </div>
                 <select id="docLecture" class="w-full p-3.5 rounded-xl bg-slate-50"><option value="">Select Lecture</option></select>
                 <div class="p-4 border-2 border-dashed rounded-xl bg-slate-50"><input type="file" id="docFile" class="w-full text-sm"></div>
-                <div id="progressArea" class="hidden"><div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden"><div id="progressBar" class="bg-indigo-600 h-full w-0"></div></div></div>
+                <div id="progressArea" class="hidden">
+                    <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden"><div id="progressBar" class="bg-indigo-600 h-full w-0"></div></div>
+                </div>
                 <button id="saveBtn" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg">Post to Feed</button>
                 <button id="closeUpload" class="w-full text-slate-400 py-2">Cancel</button>
             </div>
@@ -125,7 +126,7 @@
     </div>
 
     <script>
-        // --- SETUP ---
+        // --- INITIALIZATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyBYpA3phiRPlssjDmMp2u9_oqo3YcvQHaU",
             authDomain: "eu-summaryshare.firebaseapp.com",
@@ -144,7 +145,7 @@
         const lecs = document.querySelectorAll('#filterLecture, #docLecture');
         for(let i=1; i<=50; i++) lecs.forEach(s => { const o = document.createElement('option'); o.value = i; o.innerText = `Lecture ${i}`; s.appendChild(o); });
 
-        // --- AUTH & DATA ---
+        // --- AUTH OBSERVER ---
         auth.onAuthStateChanged(async user => {
             document.getElementById('logoutBtn').classList.toggle('hidden', !user);
             document.getElementById('profileBtn').classList.toggle('hidden', !user);
@@ -201,55 +202,95 @@
             });
         }
 
-        // --- DOWNLOAD WITH COUNTER ---
-        async function downloadWithCount(id, url, filename, btn) {
-            // Increment download count in DB
-            db.collection("summaries").doc(id).update({
-                downloads: firebase.firestore.FieldValue.increment(1)
-            });
+        // --- NEW ROBUST UPLOAD LOGIC ---
+        document.getElementById('saveBtn').onclick = async () => {
+            const user = auth.currentUser;
+            const file = document.getElementById('docFile').files[0];
+            const title = document.getElementById('docTitle').value;
 
-            const textSpan = btn.querySelector('.btn-text');
+            if (!user || !user.emailVerified) return alert("Please verify your NMU email first.");
+            if (!file || !title) return alert("Title and File are required!");
+
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = true;
+            btn.innerText = "Processing...";
+            document.getElementById('progressArea').classList.remove('hidden');
+
+            try {
+                const ref = storage.ref(`summaries/${Date.now()}_${file.name}`);
+                const task = ref.put(file);
+
+                task.on('state_changed', 
+                    (snapshot) => {
+                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                        document.getElementById('progressBar').style.width = progress + '%';
+                    }, 
+                    (error) => {
+                        alert("Upload failed: " + error.message);
+                        resetUploadUI();
+                    }, 
+                    async () => {
+                        const url = await task.snapshot.ref.getDownloadURL();
+                        await db.collection("summaries").add({
+                            title, fileUrl: url,
+                            description: document.getElementById('docDesc').value,
+                            module: document.getElementById('docModule').value,
+                            subject: document.getElementById('docSubject').value,
+                            lecture: document.getElementById('docLecture').value,
+                            ownerId: user.uid,
+                            authorName: currentUserData?.fullName || "Student",
+                            downloads: 0,
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        alert("Summary posted successfully!");
+                        resetUploadUI();
+                        document.getElementById('uploadModal').classList.add('hidden');
+                    }
+                );
+            } catch (err) {
+                alert("Error: " + err.message);
+                resetUploadUI();
+            }
+        };
+
+        function resetUploadUI() {
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = false;
+            btn.innerText = "Post to Feed";
+            document.getElementById('progressArea').classList.add('hidden');
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('docTitle').value = "";
+            document.getElementById('docFile').value = "";
+            document.getElementById('docDesc').value = "";
+        }
+
+        // --- OTHER FUNCTIONS ---
+        async function downloadWithCount(id, url, filename, btn) {
+            db.collection("summaries").doc(id).update({ downloads: firebase.firestore.FieldValue.increment(1) });
             try {
                 const response = await fetch(url);
-                const reader = response.body.getReader();
-                const contentLength = +response.headers.get('Content-Length');
-                let receivedLength = 0, chunks = []; 
-                while(true) {
-                    const {done, value} = await reader.read();
-                    if (done) break;
-                    chunks.push(value);
-                    receivedLength += value.length;
-                }
-                const blob = new Blob(chunks);
+                const blob = await response.blob();
                 const a = document.createElement('a');
                 a.href = window.URL.createObjectURL(blob); a.download = filename; a.click();
             } catch (e) { alert("Download failed."); }
         }
 
-        // --- NAME CHANGE LOGIC ---
         document.getElementById('updateNameBtn').onclick = async () => {
             const newName = document.getElementById('profileNameInput').value;
             if(!newName) return;
-            try {
-                await db.collection("users").doc(auth.currentUser.uid).update({ fullName: newName });
-                currentUserData.fullName = newName;
-                alert("Name updated successfully!");
-                renderFeed(allSummaries);
-            } catch(e) { alert("Error updating name."); }
+            await db.collection("users").doc(auth.currentUser.uid).update({ fullName: newName });
+            currentUserData.fullName = newName;
+            alert("Name updated!"); renderFeed(allSummaries);
         };
 
-        // --- AUTH HANDLERS ---
         document.getElementById('signupBtnAction').onclick = async () => {
-            const name = document.getElementById('signupName').value;
-            const email = document.getElementById('signupEmail').value;
-            const pass = document.getElementById('signupPass').value;
-            if(!name || !email.endsWith('@nmu.edu.eg')) return alert("Full Name and @nmu email required!");
+            const name = document.getElementById('signupName').value, email = document.getElementById('signupEmail').value, pass = document.getElementById('signupPass').value;
+            if(!name || !email.endsWith('@nmu.edu.eg')) return alert("Use @nmu.edu.eg email!");
             try { 
                 const cred = await auth.createUserWithEmailAndPassword(email, pass);
                 await db.collection("users").doc(cred.user.uid).set({ fullName: name, email, favorites: [] });
                 await cred.user.sendEmailVerification();
-                alert("Verify your email via the link sent to your NMU inbox!"); 
-                auth.signOut();
+                alert("Verify your email!"); auth.signOut();
                 document.getElementById('authModal').classList.add('hidden');
             } catch(e) { alert(e.message); }
         };
@@ -257,68 +298,39 @@
         document.getElementById('loginBtnAction').onclick = async () => {
             try {
                 await auth.signInWithEmailAndPassword(document.getElementById('loginEmail').value, document.getElementById('loginPass').value);
-                if (!auth.currentUser.emailVerified) { alert("Please verify your email!"); auth.signOut(); }
+                if (!auth.currentUser.emailVerified) { alert("Verify email!"); auth.signOut(); }
                 else document.getElementById('authModal').classList.add('hidden');
             } catch(e) { alert("Login failed."); }
         };
 
-        // --- PROFILE UI ---
-        document.getElementById('profileBtn').onclick = () => {
-            document.getElementById('profileModal').classList.remove('hidden');
-            document.getElementById('profileNameInput').value = currentUserData?.fullName || "Student";
-            updateProfileList();
-        };
-
-        function updateProfileList(tab = 'myUploads') {
-            const list = document.getElementById('profileList');
-            const items = tab === 'myUploads' 
-                ? allSummaries.filter(s => s.ownerId === auth.currentUser.uid) 
-                : allSummaries.filter(s => userFavs.includes(s.id));
-
-            list.innerHTML = items.length ? '' : '<p class="text-center py-8 text-slate-400">No items found.</p>';
-            items.forEach(item => {
-                const div = document.createElement('div');
-                div.className = "flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100";
-                div.innerHTML = `<p class="font-bold text-slate-700 text-sm truncate">${item.title}</p>
-                    <div class="flex gap-2">
-                        <button onclick="downloadWithCount('${item.id}', '${item.fileUrl}', '${item.title}.pdf', this)" class="text-indigo-600 p-2"><i class="fas fa-download"></i></button>
-                    </div>`;
-                list.appendChild(div);
-            });
+        async function toggleFavorite(id) {
+            if(!auth.currentUser) return alert("Login first.");
+            if(userFavs.includes(id)) userFavs = userFavs.filter(f => f !== id);
+            else userFavs.push(id);
+            await db.collection("users").doc(auth.currentUser.uid).update({ favorites: userFavs });
+            renderFeed(allSummaries);
         }
 
-        // --- UPLOAD LOGIC ---
-        document.getElementById('saveBtn').onclick = async () => {
-            const file = document.getElementById('docFile').files[0], title = document.getElementById('docTitle').value;
-            if (!file || !title) return alert("Required fields missing!");
-            document.getElementById('progressArea').classList.remove('hidden');
-            const ref = storage.ref(`summaries/${Date.now()}_${file.name}`), task = ref.put(file);
-            task.on('state_changed', s => { 
-                document.getElementById('progressBar').style.width = (s.bytesTransferred/s.totalBytes)*100 + '%';
-            }, null, async () => {
-                const url = await task.snapshot.ref.getDownloadURL();
-                await db.collection("summaries").add({
-                    title, fileUrl: url, description: document.getElementById('docDesc').value,
-                    module: document.getElementById('docModule').value, subject: document.getElementById('docSubject').value,
-                    lecture: document.getElementById('docLecture').value, ownerId: auth.currentUser.uid,
-                    authorName: currentUserData.fullName, downloads: 0, timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                document.getElementById('uploadModal').classList.add('hidden');
-                document.getElementById('progressArea').classList.add('hidden');
-            });
-        };
+        function applyFilters() {
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            const mod = document.getElementById('filterModule').value;
+            const sub = document.getElementById('filterSubject').value;
+            renderFeed(allSummaries.filter(i => {
+                const text = (i.title + (i.description || "")).toLowerCase().includes(term);
+                return text && (!mod || i.module === mod) && (!sub || i.subject === sub);
+            }));
+        }
 
-        // UI Toggles
+        // UI Event Listeners
+        document.getElementById('profileBtn').onclick = () => { document.getElementById('profileModal').classList.remove('hidden'); document.getElementById('profileNameInput').value = currentUserData?.fullName || "Student"; };
         document.getElementById('tabLogin').onclick = () => { tabLogin.className = "flex-1 py-4 font-bold text-indigo-600 border-b-2 border-indigo-600"; tabSignup.className = "flex-1 py-4 font-bold text-slate-400 border-b-2 border-transparent"; loginForm.classList.remove('hidden'); signupForm.classList.add('hidden'); };
         document.getElementById('tabSignup').onclick = () => { tabSignup.className = "flex-1 py-4 font-bold text-indigo-600 border-b-2 border-indigo-600"; tabLogin.className = "flex-1 py-4 font-bold text-slate-400 border-b-2 border-transparent"; signupForm.classList.remove('hidden'); loginForm.classList.add('hidden'); };
-        document.getElementById('tabMyUploads').onclick = (e) => { document.getElementById('tabSaved').className = "pb-2 border-b-2 border-transparent text-slate-400 font-bold text-sm"; e.target.className = "pb-2 border-b-2 border-indigo-600 text-indigo-600 font-bold text-sm"; updateProfileList('myUploads'); };
-        document.getElementById('tabSaved').onclick = (e) => { document.getElementById('tabMyUploads').className = "pb-2 border-b-2 border-transparent text-slate-400 font-bold text-sm"; e.target.className = "pb-2 border-b-2 border-indigo-600 text-indigo-600 font-bold text-sm"; updateProfileList('saved'); };
-        
         document.getElementById('closeAuth').onclick = () => document.getElementById('authModal').classList.add('hidden');
         document.getElementById('closeUpload').onclick = () => document.getElementById('uploadModal').classList.add('hidden');
         document.getElementById('closeProfile').onclick = () => document.getElementById('profileModal').classList.add('hidden');
         document.getElementById('logoutBtn').onclick = () => auth.signOut();
         document.getElementById('mainUploadBtn').onclick = () => !auth.currentUser ? document.getElementById('authModal').classList.remove('hidden') : document.getElementById('uploadModal').classList.remove('hidden');
+        ['searchInput', 'filterModule', 'filterSubject'].forEach(id => document.getElementById(id).addEventListener('input', applyFilters));
     </script>
 </body>
 </html>
