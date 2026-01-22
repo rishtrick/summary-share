@@ -17,6 +17,8 @@
         #progressBar { transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
         .dl-bar { transition: width 0.2s linear; }
         .fav-active { color: #ef4444 !important; }
+        /* Smooth transition for sliding tabs */
+        .auth-content { transition: all 0.3s ease; }
     </style>
 </head>
 <body class="min-h-screen bg-slate-100 font-sans text-slate-900">
@@ -52,49 +54,48 @@
         <div id="feed" class="grid gap-4"></div>
     </main>
 
+    <div id="authModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-[2.5rem] shadow-2xl max-w-md w-full overflow-hidden">
+            <div class="flex border-b">
+                <button id="tabLogin" class="flex-1 py-4 font-bold text-indigo-600 border-b-2 border-indigo-600">Login</button>
+                <button id="tabSignup" class="flex-1 py-4 font-bold text-slate-400 border-b-2 border-transparent">Sign Up</button>
+            </div>
+            
+            <div class="p-8">
+                <div id="loginForm" class="auth-content space-y-4">
+                    <h2 class="text-xl font-bold text-slate-800">Welcome Back</h2>
+                    <input type="email" id="loginEmail" placeholder="name@nmu.edu.eg" class="w-full p-4 rounded-2xl border bg-slate-50 outline-none">
+                    <input type="password" id="loginPass" placeholder="Password" class="w-full p-4 rounded-2xl border bg-slate-50 outline-none">
+                    <button id="loginBtnAction" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg">Login</button>
+                </div>
+
+                <div id="signupForm" class="auth-content hidden space-y-4">
+                    <h2 class="text-xl font-bold text-slate-800">Create Account</h2>
+                    <input type="text" id="signupName" placeholder="Full Name" class="w-full p-4 rounded-2xl border bg-slate-50 outline-none">
+                    <input type="email" id="signupEmail" placeholder="name@nmu.edu.eg" class="w-full p-4 rounded-2xl border bg-slate-50 outline-none">
+                    <input type="password" id="signupPass" placeholder="Password (6+ chars)" class="w-full p-4 rounded-2xl border bg-slate-50 outline-none">
+                    <button id="signupBtnAction" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg">Sign Up</button>
+                </div>
+                
+                <button id="closeAuth" class="w-full text-slate-400 text-sm mt-6">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <div id="profileModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-[2rem] p-8 max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div class="flex justify-between items-start mb-6">
                 <div>
-                    <h2 class="text-2xl font-bold text-slate-800" id="userEmailDisplay">Student Profile</h2>
-                    <p class="text-slate-500 text-sm">Manage your contributions and saved files</p>
+                    <h2 class="text-2xl font-bold text-slate-800" id="userDisplayName">Student Profile</h2>
+                    <p class="text-slate-500 text-sm">Manage your account</p>
                 </div>
                 <button id="closeProfile" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times text-xl"></i></button>
             </div>
-            
-            <div class="grid grid-cols-2 gap-4 mb-8">
-                <div class="bg-slate-50 p-4 rounded-2xl text-center">
-                    <span class="block text-2xl font-bold text-indigo-600" id="statUploads">0</span>
-                    <span class="text-xs text-slate-500 uppercase font-bold">My Uploads</span>
-                </div>
-                <div class="bg-slate-50 p-4 rounded-2xl text-center">
-                    <span class="block text-2xl font-bold text-indigo-600" id="statFavs">0</span>
-                    <span class="text-xs text-slate-500 uppercase font-bold">Saved Items</span>
-                </div>
-            </div>
-
             <div class="flex gap-4 border-b mb-4">
                 <button id="tabMyUploads" class="pb-2 border-b-2 border-indigo-600 text-indigo-600 font-bold text-sm">My Uploads</button>
                 <button id="tabSaved" class="pb-2 border-b-2 border-transparent text-slate-400 font-bold text-sm">Saved</button>
             </div>
-
-            <div id="profileList" class="overflow-y-auto space-y-3 flex-1 pr-2">
-                </div>
-        </div>
-    </div>
-
-    <div id="authModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white p-8 rounded-[2.5rem] shadow-2xl max-w-md w-full text-center">
-            <h2 class="text-2xl font-bold text-slate-800 mb-2">Student Login</h2>
-            <div class="space-y-3">
-                <input type="email" id="authEmail" placeholder="name@nmu.edu.eg" class="w-full p-4 rounded-2xl border bg-slate-50 outline-none">
-                <input type="password" id="authPass" placeholder="Password (6+ chars)" class="w-full p-4 rounded-2xl border bg-slate-50 outline-none">
-                <div class="flex gap-2">
-                    <button id="loginBtn" class="flex-1 bg-indigo-600 text-white py-4 rounded-2xl font-bold">Login</button>
-                    <button id="signupBtn" class="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold">Sign Up</button>
-                </div>
-                <button id="closeAuth" class="text-slate-400 text-sm mt-4">Close</button>
-            </div>
+            <div id="profileList" class="overflow-y-auto space-y-3 flex-1 pr-2"></div>
         </div>
     </div>
 
@@ -125,7 +126,6 @@
     </div>
 
     <script>
-        // --- INITIALIZATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyBYpA3phiRPlssjDmMp2u9_oqo3YcvQHaU",
             authDomain: "eu-summaryshare.firebaseapp.com",
@@ -141,6 +141,27 @@
 
         let allSummaries = [];
         let userFavs = [];
+        let currentUserData = null;
+
+        // --- AUTH TAB SLIDER LOGIC ---
+        const tabLogin = document.getElementById('tabLogin');
+        const tabSignup = document.getElementById('tabSignup');
+        const loginForm = document.getElementById('loginForm');
+        const signupForm = document.getElementById('signupForm');
+
+        tabLogin.onclick = () => {
+            tabLogin.className = "flex-1 py-4 font-bold text-indigo-600 border-b-2 border-indigo-600";
+            tabSignup.className = "flex-1 py-4 font-bold text-slate-400 border-b-2 border-transparent";
+            loginForm.classList.remove('hidden');
+            signupForm.classList.add('hidden');
+        };
+
+        tabSignup.onclick = () => {
+            tabSignup.className = "flex-1 py-4 font-bold text-indigo-600 border-b-2 border-indigo-600";
+            tabLogin.className = "flex-1 py-4 font-bold text-slate-400 border-b-2 border-transparent";
+            signupForm.classList.remove('hidden');
+            loginForm.classList.add('hidden');
+        };
 
         // Fill Lectures
         const lecs = document.querySelectorAll('#filterLecture, #docLecture');
@@ -148,14 +169,16 @@
             lecs.forEach(s => { const o = document.createElement('option'); o.value = i; o.innerText = `Lecture ${i}`; s.appendChild(o); });
         }
 
-        // --- AUTH & DATA LOAD ---
+        // --- AUTH OBSERVER ---
         auth.onAuthStateChanged(async user => {
             document.getElementById('logoutBtn').classList.toggle('hidden', !user);
             document.getElementById('profileBtn').classList.toggle('hidden', !user);
             if(user) {
                 const userDoc = await db.collection("users").doc(user.uid).get();
-                userFavs = userDoc.exists ? (userDoc.data().favorites || []) : [];
+                currentUserData = userDoc.exists ? userDoc.data() : null;
+                userFavs = currentUserData ? (currentUserData.favorites || []) : [];
             } else {
+                currentUserData = null;
                 userFavs = [];
             }
             renderFeed(allSummaries);
@@ -184,7 +207,7 @@
                             <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-xl shrink-0"><i class="fas fa-file-pdf"></i></div>
                             <div>
                                 <h3 class="font-bold text-slate-800">${item.title}</h3>
-                                <p class="text-xs text-slate-400">By ${item.authorEmail ? item.authorEmail.split('@')[0] : 'Contributor'}</p>
+                                <p class="text-xs text-slate-400">By <span class="text-indigo-600 font-semibold">${item.authorName || 'Anonymous'}</span></p>
                             </div>
                         </div>
                         <div class="flex gap-2 items-center">
@@ -204,73 +227,103 @@
             });
         }
 
-        // --- FAVORITE LOGIC ---
+        // --- SIGNUP WITH NAME ---
+        document.getElementById('signupBtnAction').onclick = async () => {
+            const name = document.getElementById('signupName').value;
+            const email = document.getElementById('signupEmail').value;
+            const pass = document.getElementById('signupPass').value;
+            
+            if(!name || !email.endsWith('@nmu.edu.eg')) return alert("Full Name and @nmu email required!");
+            
+            try { 
+                const cred = await auth.createUserWithEmailAndPassword(email, pass);
+                await db.collection("users").doc(cred.user.uid).set({
+                    fullName: name,
+                    email: email,
+                    favorites: []
+                });
+                await cred.user.sendEmailVerification();
+                alert("Check your inbox to verify!"); auth.signOut();
+                document.getElementById('authModal').classList.add('hidden');
+            } catch(e) { alert(e.message); }
+        };
+
+        // --- LOGIN ---
+        document.getElementById('loginBtnAction').onclick = async () => {
+            const email = document.getElementById('loginEmail').value;
+            const pass = document.getElementById('loginPass').value;
+            try {
+                await auth.signInWithEmailAndPassword(email, pass);
+                if (!auth.currentUser.emailVerified) { alert("Please verify your email!"); auth.signOut(); }
+                else document.getElementById('authModal').classList.add('hidden');
+            } catch(e) { alert("Login failed."); }
+        };
+
+        // --- UPLOAD WITH NAME ---
+        document.getElementById('saveBtn').onclick = async () => {
+            const user = auth.currentUser;
+            const file = document.getElementById('docFile').files[0], title = document.getElementById('docTitle').value;
+            if (!file || !title) return alert("Required fields missing!");
+            
+            document.getElementById('progressArea').classList.remove('hidden');
+            const ref = storage.ref(`summaries/${Date.now()}_${file.name}`), task = ref.put(file);
+            
+            task.on('state_changed', s => { 
+                document.getElementById('progressBar').style.width = (s.bytesTransferred/s.totalBytes)*100 + '%';
+            }, null, async () => {
+                const url = await task.snapshot.ref.getDownloadURL();
+                // Get name from Firestore
+                const uDoc = await db.collection("users").doc(user.uid).get();
+                const authorName = uDoc.data().fullName;
+
+                await db.collection("summaries").add({
+                    title, fileUrl: url, description: document.getElementById('docDesc').value,
+                    module: document.getElementById('docModule').value, subject: document.getElementById('docSubject').value,
+                    lecture: document.getElementById('docLecture').value, ownerId: user.uid,
+                    authorName: authorName, authorEmail: user.email, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                document.getElementById('uploadModal').classList.add('hidden');
+                document.getElementById('progressArea').classList.add('hidden');
+            });
+        };
+
+        // --- HELPERS (Toggle Fav, Profile, Close) ---
         async function toggleFavorite(id) {
             const user = auth.currentUser;
-            if(!user || !user.emailVerified) return alert("Please log in and verify email to save summaries.");
-            
-            const userRef = db.collection("users").doc(user.uid);
-            if(userFavs.includes(id)) {
-                userFavs = userFavs.filter(f => f !== id);
-            } else {
-                userFavs.push(id);
-            }
-            await userRef.set({ favorites: userFavs }, { merge: true });
+            if(!user || !user.emailVerified) return alert("Verify email to save summaries.");
+            if(userFavs.includes(id)) userFavs = userFavs.filter(f => f !== id);
+            else userFavs.push(id);
+            await db.collection("users").doc(user.uid).update({ favorites: userFavs });
             renderFeed(allSummaries);
-            if(!document.getElementById('profileModal').classList.contains('hidden')) updateProfileUI();
         }
 
-        // --- PROFILE DASHBOARD ---
         document.getElementById('profileBtn').onclick = () => {
             document.getElementById('profileModal').classList.remove('hidden');
-            document.getElementById('userEmailDisplay').innerText = auth.currentUser.email.split('@')[0];
+            document.getElementById('userDisplayName').innerText = currentUserData?.fullName || "Student";
             updateProfileUI();
         };
 
         function updateProfileUI(tab = 'myUploads') {
             const list = document.getElementById('profileList');
             const user = auth.currentUser;
-            const myFiles = allSummaries.filter(s => s.ownerId === user.uid);
-            const savedFiles = allSummaries.filter(s => userFavs.includes(s.id));
-            
-            document.getElementById('statUploads').innerText = myFiles.length;
-            document.getElementById('statFavs').innerText = savedFiles.length;
+            const items = tab === 'myUploads' 
+                ? allSummaries.filter(s => s.ownerId === user.uid) 
+                : allSummaries.filter(s => userFavs.includes(s.id));
 
-            const items = tab === 'myUploads' ? myFiles : savedFiles;
-            list.innerHTML = items.length ? '' : '<p class="text-center text-slate-400 py-8 text-sm">Nothing here yet.</p>';
-
+            list.innerHTML = items.length ? '' : '<p class="text-center py-8 text-slate-400">Nothing found.</p>';
             items.forEach(item => {
                 const div = document.createElement('div');
                 div.className = "flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100";
-                div.innerHTML = `
-                    <div class="truncate pr-4">
-                        <p class="font-bold text-slate-700 text-sm truncate">${item.title}</p>
-                        <p class="text-[10px] text-slate-400 uppercase font-bold">${item.module} • ${item.subject}</p>
-                    </div>
+                div.innerHTML = `<p class="font-bold text-slate-700 text-sm truncate">${item.title}</p>
                     <div class="flex gap-2">
                         <button onclick="downloadWithProgress('${item.fileUrl}', '${item.title}.pdf', this)" class="text-indigo-600 p-2"><i class="fas fa-download"></i></button>
-                        ${tab === 'myUploads' ? `<button onclick="deleteFile('${item.id}', '${item.fileUrl}')" class="text-red-400 p-2"><i class="fas fa-trash-alt"></i></button>` : ''}
-                    </div>
-                `;
+                    </div>`;
                 list.appendChild(div);
             });
         }
 
-        document.getElementById('tabMyUploads').onclick = (e) => {
-            document.getElementById('tabSaved').className = "pb-2 border-b-2 border-transparent text-slate-400 font-bold text-sm";
-            e.target.className = "pb-2 border-b-2 border-indigo-600 text-indigo-600 font-bold text-sm";
-            updateProfileUI('myUploads');
-        };
-        document.getElementById('tabSaved').onclick = (e) => {
-            document.getElementById('tabMyUploads').className = "pb-2 border-b-2 border-transparent text-slate-400 font-bold text-sm";
-            e.target.className = "pb-2 border-b-2 border-indigo-600 text-indigo-600 font-bold text-sm";
-            updateProfileUI('saved');
-        };
-
-        // --- CORE FUNCTIONS (Download/Delete/Auth) ---
         async function downloadWithProgress(url, filename, btn) {
             const textSpan = btn.querySelector('.btn-text') || btn;
-            const progressBar = btn.querySelector('.dl-bar');
             try {
                 const response = await fetch(url);
                 const reader = response.body.getReader();
@@ -281,7 +334,6 @@
                     if (done) break;
                     chunks.push(value);
                     receivedLength += value.length;
-                    if (contentLength && progressBar) progressBar.style.width = Math.round((receivedLength/contentLength)*100) + '%';
                 }
                 const blob = new Blob(chunks);
                 const a = document.createElement('a');
@@ -291,44 +343,10 @@
 
         async function deleteFile(id, url) {
             if(!confirm("Delete forever?")) return;
-            try {
-                await db.collection("summaries").doc(id).delete();
-                try { await storage.refFromURL(url).delete(); } catch(e) {}
-                if(!document.getElementById('profileModal').classList.contains('hidden')) updateProfileUI();
-            } catch(e) { alert("Permission denied."); }
+            await db.collection("summaries").doc(id).delete();
+            try { await storage.refFromURL(url).delete(); } catch(e) {}
         }
 
-        document.getElementById('signupBtn').onclick = async () => {
-            const email = document.getElementById('authEmail').value, pass = document.getElementById('authPass').value;
-            if(!email.endsWith('@nmu.edu.eg')) return alert("Use @nmu.edu.eg email!");
-            try { 
-                const cred = await auth.createUserWithEmailAndPassword(email, pass);
-                await cred.user.sendEmailVerification();
-                alert("Check your inbox to verify!"); auth.signOut();
-                document.getElementById('authModal').classList.add('hidden');
-            } catch(e) { alert(e.message); }
-        };
-
-        document.getElementById('loginBtn').onclick = async () => {
-            try {
-                await auth.signInWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPass').value);
-                if (!auth.currentUser.emailVerified) { alert("Please verify your email!"); auth.signOut(); }
-                else document.getElementById('authModal').classList.add('hidden');
-            } catch(e) { alert("Login failed."); }
-        };
-
-        document.getElementById('mainUploadBtn').onclick = () => {
-            if(!auth.currentUser) document.getElementById('authModal').classList.remove('hidden');
-            else if (!auth.currentUser.emailVerified) alert("Verify your email!");
-            else document.getElementById('uploadModal').classList.remove('hidden');
-        };
-
-        // --- CLOSING MODALS & FILTERS ---
-        document.getElementById('closeProfile').onclick = () => document.getElementById('profileModal').classList.add('hidden');
-        document.getElementById('closeAuth').onclick = () => document.getElementById('authModal').classList.add('hidden');
-        document.getElementById('closeUpload').onclick = () => document.getElementById('uploadModal').classList.add('hidden');
-        document.getElementById('logoutBtn').onclick = () => { auth.signOut(); document.getElementById('profileModal').classList.add('hidden'); };
-        
         function applyFilters() {
             const term = document.getElementById('searchInput').value.toLowerCase();
             const mod = document.getElementById('filterModule').value;
@@ -338,27 +356,18 @@
                 return text && (!mod || i.module === mod) && (!sub || i.subject === sub);
             }));
         }
-        ['searchInput', 'filterModule', 'filterSubject'].forEach(id => document.getElementById(id).addEventListener('input', applyFilters));
-        
-        document.getElementById('saveBtn').onclick = async () => {
-            const file = document.getElementById('docFile').files[0], title = document.getElementById('docTitle').value;
-            if (!file || !title) return alert("Required fields missing!");
-            document.getElementById('progressArea').classList.remove('hidden');
-            const ref = storage.ref(`summaries/${Date.now()}_${file.name}`), task = ref.put(file);
-            task.on('state_changed', s => { 
-                document.getElementById('progressBar').style.width = (s.bytesTransferred/s.totalBytes)*100 + '%';
-            }, null, async () => {
-                const url = await task.snapshot.ref.getDownloadURL();
-                await db.collection("summaries").add({
-                    title, fileUrl: url, description: document.getElementById('docDesc').value,
-                    module: document.getElementById('docModule').value, subject: document.getElementById('docSubject').value,
-                    lecture: document.getElementById('docLecture').value, ownerId: auth.currentUser.uid,
-                    authorEmail: auth.currentUser.email, timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                document.getElementById('uploadModal').classList.add('hidden');
-                document.getElementById('progressArea').classList.add('hidden');
-            });
+
+        document.getElementById('mainUploadBtn').onclick = () => {
+            if(!auth.currentUser) document.getElementById('authModal').classList.remove('hidden');
+            else if (!auth.currentUser.emailVerified) alert("Verify email!");
+            else document.getElementById('uploadModal').classList.remove('hidden');
         };
+
+        document.getElementById('closeAuth').onclick = () => document.getElementById('authModal').classList.add('hidden');
+        document.getElementById('closeUpload').onclick = () => document.getElementById('uploadModal').classList.add('hidden');
+        document.getElementById('closeProfile').onclick = () => document.getElementById('profileModal').classList.add('hidden');
+        document.getElementById('logoutBtn').onclick = () => auth.signOut();
+        ['searchInput', 'filterModule', 'filterSubject'].forEach(id => document.getElementById(id).addEventListener('input', applyFilters));
     </script>
 </body>
 </html>
