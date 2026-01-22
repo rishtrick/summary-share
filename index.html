@@ -15,7 +15,6 @@
     <style>
         .hidden { display: none !important; }
         #progressBar { transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-        /* Smooth progress line for download button */
         .dl-bar { transition: width 0.2s linear; }
     </style>
 </head>
@@ -29,7 +28,7 @@
             </div>
             <div class="flex items-center gap-3">
                 <button id="mainUploadBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold hover:bg-indigo-700 shadow-md transition">+ Upload</button>
-                <button id="logoutBtn" class="hidden text-slate-400 hover:text-red-500 px-2"><i class="fas fa-sign-out-alt text-xl"></i></button>
+                <button id="logoutBtn" class="hidden text-slate-400 hover:text-red-500 px-2 transition"><i class="fas fa-sign-out-alt text-xl"></i></button>
             </div>
         </div>
     </nav>
@@ -131,15 +130,14 @@
 
         function renderFeed(items) {
             const feed = document.getElementById('feed');
-            const uid = auth.currentUser ? auth.currentUser.uid : null;
+            const user = auth.currentUser;
+            const uid = user ? user.uid : null;
             feed.innerHTML = items.length ? '' : '<div class="p-12 text-center text-slate-400">No summaries found.</div>';
             
             items.forEach(item => {
                 const card = document.createElement('div');
                 card.className = "bg-white p-6 rounded-2xl shadow-sm border border-slate-50";
                 const isOwner = uid === item.ownerId;
-                
-                // Real Preview URL using Google Docs Viewer
                 const previewUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(item.fileUrl)}&embedded=true`;
 
                 card.innerHTML = `
@@ -159,7 +157,6 @@
                         <div class="flex gap-2 items-center">
                             ${isOwner ? `<button onclick="deleteFile('${item.id}', '${item.fileUrl}')" class="text-red-400 px-2 hover:bg-red-50 p-2 rounded-lg"><i class="fas fa-trash-alt"></i></button>` : ''}
                             <a href="${previewUrl}" target="_blank" class="px-4 py-2 bg-slate-100 rounded-xl font-bold text-sm text-slate-600 hover:bg-slate-200">View</a>
-                            
                             <button onclick="downloadWithProgress('${item.fileUrl}', '${item.title}.pdf', this)" 
                                     class="relative overflow-hidden px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold text-sm shadow-md min-w-[100px] hover:bg-indigo-700 transition">
                                 <span class="btn-text">Download</span>
@@ -173,55 +170,37 @@
             });
         }
 
-        // New Download with Progress Logic
         async function downloadWithProgress(url, filename, btn) {
             const textSpan = btn.querySelector('.btn-text');
             const progressBar = btn.querySelector('.dl-bar');
             const originalText = textSpan.innerText;
-            
             try {
                 btn.disabled = true;
                 const response = await fetch(url);
                 if (!response.ok) throw new Error('Network response was not ok');
-
                 const reader = response.body.getReader();
                 const contentLength = +response.headers.get('Content-Length');
-                
                 let receivedLength = 0;
                 let chunks = []; 
-                
                 while(true) {
                     const {done, value} = await reader.read();
                     if (done) break;
-
                     chunks.push(value);
                     receivedLength += value.length;
-
                     if (contentLength) {
                         const percent = Math.round((receivedLength / contentLength) * 100);
                         textSpan.innerText = percent + '%';
                         progressBar.style.width = percent + '%';
                     }
                 }
-
                 const blob = new Blob(chunks);
                 const blobUrl = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = blobUrl;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
+                a.href = blobUrl; a.download = filename; a.click();
                 window.URL.revokeObjectURL(blobUrl);
-                
                 textSpan.innerText = "Done!";
-                progressBar.style.width = '100%';
-
-            } catch (err) {
-                console.error(err);
-                alert("Download failed. Make sure CORS is configured in Firebase.");
-                textSpan.innerText = "Error";
-            } finally {
+            } catch (err) { alert("Download failed."); }
+            finally {
                 setTimeout(() => {
                     textSpan.innerText = originalText;
                     progressBar.style.width = '0%';
@@ -230,44 +209,72 @@
             }
         }
 
-        // Auth Actions
+        // --- UPDATED AUTH LOGIC ---
         document.getElementById('signupBtn').onclick = async () => {
             const email = document.getElementById('authEmail').value;
             const pass = document.getElementById('authPass').value;
             if(!email.endsWith('@nmu.edu.eg')) return alert("Use @nmu.edu.eg email!");
-            try { await auth.createUserWithEmailAndPassword(email, pass); document.getElementById('authModal').classList.add('hidden'); } 
+            
+            try { 
+                const cred = await auth.createUserWithEmailAndPassword(email, pass);
+                await cred.user.sendEmailVerification();
+                alert("Verification email sent! Check your inbox to activate your account.");
+                auth.signOut();
+                document.getElementById('authModal').classList.add('hidden');
+            } 
             catch(e) { alert(e.message); }
         };
 
         document.getElementById('loginBtn').onclick = async () => {
-            try { await auth.signInWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPass').value); document.getElementById('authModal').classList.add('hidden'); } 
-            catch(e) { alert("Login failed."); }
+            try { 
+                await auth.signInWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPass').value); 
+                const user = auth.currentUser;
+                if (!user.emailVerified) {
+                    alert("Please verify your email address. Check your NMU inbox.");
+                    auth.signOut();
+                } else {
+                    document.getElementById('authModal').classList.add('hidden');
+                }
+            } 
+            catch(e) { alert("Login failed. Check credentials."); }
         };
 
-        // Upload Action
+        // Main Button Logic with 2FA check
+        document.getElementById('mainUploadBtn').onclick = () => {
+            const user = auth.currentUser;
+            if(!user) {
+                document.getElementById('authModal').classList.remove('hidden');
+            } else if (!user.emailVerified) {
+                alert("Account not verified! Check your NMU email.");
+            } else {
+                document.getElementById('uploadModal').classList.remove('hidden');
+            }
+        };
+
+        document.getElementById('logoutBtn').onclick = () => auth.signOut();
+
         document.getElementById('saveBtn').onclick = async () => {
+            const user = auth.currentUser;
+            if (!user || !user.emailVerified) return alert("Verify your email first.");
+
             const file = document.getElementById('docFile').files[0];
             const title = document.getElementById('docTitle').value;
             if (!file || !title) return alert("File and Title are required!");
-
+            
             const btn = document.getElementById('saveBtn');
             btn.disabled = true;
             document.getElementById('progressArea').classList.remove('hidden');
-
+            
             const ref = storage.ref(`summaries/${Date.now()}_${file.name}`);
             const task = ref.put(file);
-
+            
             task.on('state_changed', 
                 s => { 
                     const p = (s.bytesTransferred / s.totalBytes) * 100;
                     document.getElementById('progressBar').style.width = p + '%';
                     document.getElementById('percentText').innerText = Math.round(p) + '%';
                 },
-                e => { 
-                    alert("Upload failed: " + e.message); 
-                    btn.disabled = false; 
-                    document.getElementById('progressArea').classList.add('hidden');
-                },
+                e => { alert("Upload failed: " + e.message); btn.disabled = false; },
                 async () => {
                     const url = await task.snapshot.ref.getDownloadURL();
                     try {
@@ -277,25 +284,24 @@
                             module: document.getElementById('docModule').value,
                             subject: document.getElementById('docSubject').value,
                             lecture: document.getElementById('docLecture').value,
-                            ownerId: auth.currentUser.uid,
-                            authorEmail: auth.currentUser.email,
+                            ownerId: user.uid,
+                            authorEmail: user.email,
                             timestamp: firebase.firestore.FieldValue.serverTimestamp()
                         });
                         document.getElementById('uploadModal').classList.add('hidden');
                         document.getElementById('docTitle').value = "";
-                        document.getElementById('docDesc').value = "";
                         document.getElementById('docFile').value = "";
-                    } catch(err) {
-                        alert("Database error: Make sure you use @nmu.edu.eg email!");
-                    }
+                    } catch(err) { alert("Database error."); }
                     btn.disabled = false;
                     document.getElementById('progressArea').classList.add('hidden');
-                    document.getElementById('progressBar').style.width = '0%';
                 }
             );
         };
 
         async function deleteFile(id, url) {
+            const user = auth.currentUser;
+            if (!user || !user.emailVerified) return alert("Verify your email first.");
+            
             if(!confirm("Delete forever?")) return;
             try {
                 await db.collection("summaries").doc(id).delete();
@@ -314,11 +320,6 @@
             renderFeed(filtered);
         }
 
-        document.getElementById('mainUploadBtn').onclick = () => {
-            if(auth.currentUser) document.getElementById('uploadModal').classList.remove('hidden');
-            else document.getElementById('authModal').classList.remove('hidden');
-        };
-        document.getElementById('logoutBtn').onclick = () => auth.signOut();
         document.getElementById('closeAuth').onclick = () => document.getElementById('authModal').classList.add('hidden');
         document.getElementById('closeUpload').onclick = () => document.getElementById('uploadModal').classList.add('hidden');
         ['searchInput', 'filterModule', 'filterSubject'].forEach(id => document.getElementById(id).addEventListener('input', applyFilters));
