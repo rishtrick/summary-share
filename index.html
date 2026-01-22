@@ -14,8 +14,9 @@
 
     <style>
         .hidden { display: none !important; }
-        .fav-active { color: #ef4444 !important; }
         #progressBar { transition: width 0.4s ease; }
+        .fav-active { color: #ef4444 !important; }
+        input:disabled { opacity: 1; color: inherit; cursor: default; }
     </style>
 </head>
 <body class="min-h-screen bg-slate-100 font-sans text-slate-900">
@@ -36,35 +37,89 @@
 
     <main class="max-w-5xl mx-auto px-4 py-8">
         <div class="space-y-4 mb-8">
-            <input type="text" id="searchInput" placeholder="Search summaries..." class="w-full p-4 rounded-2xl border bg-white outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm">
+            <input type="text" id="searchInput" placeholder="Search title or description..." class="w-full p-4 rounded-2xl border border-slate-200 bg-white outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <select id="filterModule" class="p-3 rounded-xl border bg-white"><option value="">All Modules</option><option value="CVS">CVS</option><option value="BLOOD">BLOOD</option><option value="RESP">RESP</option></select>
+                <select id="filterSubject" class="p-3 rounded-xl border bg-white">
+                    <option value="">All Subjects</option>
+                    <option value="ANATOMY">ANATOMY</option><option value="HISTOLOGY">HISTOLOGY</option><option value="EMBRYOLOGY">EMBRYOLOGY</option>
+                    <option value="MICROBIOLOGY">MICROBIOLOGY</option><option value="PATHOLOGY">PATHOLOGY</option><option value="PARASITELOGY">PARASITELOGY</option>
+                    <option value="PHARMACOLOGY">PHARMACOLOGY</option><option value="PHYSIOLOGY">PHYSIOLOGY</option><option value="BIOCHEMISTRY">BIOCHEMISTRY</option>
+                </select>
+                <select id="filterLecture" class="p-3 rounded-xl border bg-white"><option value="">All Lectures</option></select>
+            </div>
         </div>
         <div id="feed" class="grid gap-4"></div>
     </main>
 
     <div id="profileModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-[2rem] p-8 max-w-2xl w-full shadow-2xl flex flex-col max-h-[90vh]">
-            <div class="flex justify-between items-start mb-6">
+            <div class="flex justify-between items-start mb-4">
                 <div class="w-full mr-4">
-                    <span class="text-[10px] uppercase font-black text-indigo-500 tracking-widest">Student Profile</span>
+                    <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Student Name</span>
                     <div class="flex items-center gap-3 mt-1">
-                        <span class="text-slate-400 font-bold text-sm">NAME:</span>
                         <input type="text" id="profileNameInput" disabled class="text-2xl font-bold text-slate-800 bg-transparent border-b-2 border-transparent outline-none w-full transition-all">
                         <button id="editNameBtn" class="text-slate-400 hover:text-indigo-600 transition"><i class="fas fa-pen"></i></button>
                         <button id="saveNameBtn" class="hidden text-green-500 hover:text-green-600 transition"><i class="fas fa-check-circle text-2xl"></i></button>
                     </div>
+                    <p class="text-slate-400 text-[11px] mt-4 leading-tight italic">
+                        <i class="fas fa-shield-alt mr-1"></i> 
+                        Accountability Notice: Please ensure all contributions adhere to academic standards. Explicit or inappropriate content is strictly prohibited.
+                    </p>
                 </div>
                 <button id="closeProfile" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times text-xl"></i></button>
             </div>
             
             <div class="flex gap-6 border-b mb-4">
-                <button id="tabMyUploads" class="pb-2 border-b-2 border-indigo-600 text-indigo-600 font-bold text-sm uppercase">My Uploads</button>
-                <button id="tabSaved" class="pb-2 border-b-2 border-transparent text-slate-400 font-bold text-sm uppercase">Saved</button>
+                <button id="tabMyUploads" class="pb-2 border-b-2 border-indigo-600 text-indigo-600 font-bold text-sm">My Uploads</button>
+                <button id="tabSaved" class="pb-2 border-b-2 border-transparent text-slate-400 font-bold text-sm">Saved</button>
             </div>
             <div id="profileList" class="overflow-y-auto space-y-3 flex-1 pr-2"></div>
         </div>
     </div>
 
+    <div id="authModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-[2.5rem] shadow-2xl max-w-md w-full overflow-hidden p-8">
+            <div class="flex border-b mb-6">
+                <button id="tabLogin" class="flex-1 py-4 font-bold text-indigo-600 border-b-2 border-indigo-600">Login</button>
+                <button id="tabSignup" class="flex-1 py-4 font-bold text-slate-400 border-b-2 border-transparent">Sign Up</button>
+            </div>
+            <div id="loginForm" class="space-y-4">
+                <input type="email" id="loginEmail" placeholder="name@nmu.edu.eg" class="w-full p-4 rounded-2xl border bg-slate-50 outline-none">
+                <input type="password" id="loginPass" placeholder="Password" class="w-full p-4 rounded-2xl border bg-slate-50 outline-none">
+                <button id="loginBtnAction" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold">Login</button>
+            </div>
+            <div id="signupForm" class="hidden space-y-4">
+                <input type="text" id="signupName" placeholder="Full Name" class="w-full p-4 rounded-2xl border bg-slate-50 outline-none">
+                <input type="email" id="signupEmail" placeholder="name@nmu.edu.eg" class="w-full p-4 rounded-2xl border bg-slate-50 outline-none">
+                <input type="password" id="signupPass" placeholder="Password (6+ chars)" class="w-full p-4 rounded-2xl border bg-slate-50 outline-none">
+                <button id="signupBtnAction" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold">Sign Up</button>
+            </div>
+            <button id="closeAuth" class="w-full text-slate-400 text-sm mt-6">Cancel</button>
+        </div>
+    </div>
+
+    <div id="uploadModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-[2rem] p-8 max-w-lg w-full shadow-2xl overflow-y-auto max-h-[90vh]">
+            <h2 class="text-2xl font-bold text-slate-800 mb-4">Post Summary</h2>
+            <div class="space-y-4">
+                <input type="text" id="docTitle" placeholder="Title" class="w-full p-3.5 rounded-xl border bg-slate-50 outline-none">
+                <textarea id="docDesc" placeholder="Description..." class="w-full p-3.5 rounded-xl border bg-slate-50 outline-none h-24 resize-none"></textarea>
+                <div class="grid grid-cols-2 gap-3">
+                    <select id="docModule" class="p-3.5 rounded-xl bg-slate-50"><option value="">Module</option><option value="CVS">CVS</option><option value="BLOOD">BLOOD</option><option value="RESP">RESP</option></select>
+                    <select id="docSubject" class="p-3.5 rounded-xl bg-slate-50"><option value="">Subject</option><option value="ANATOMY">ANATOMY</option><option value="HISTOLOGY">HISTOLOGY</option><option value="EMBRYOLOGY">EMBRYOLOGY</option><option value="MICROBIOLOGY">MICROBIOLOGY</option><option value="PATHOLOGY">PATHOLOGY</option><option value="PARASITELOGY">PARASITELOGY</option><option value="PHARMACOLOGY">PHARMACOLOGY</option><option value="PHYSIOLOGY">PHYSIOLOGY</option><option value="BIOCHEMISTRY">BIOCHEMISTRY</option></select>
+                </div>
+                <select id="docLecture" class="w-full p-3.5 rounded-xl bg-slate-50"><option value="">Select Lecture</option></select>
+                <div class="p-4 border-2 border-dashed rounded-xl bg-slate-50"><input type="file" id="docFile" class="w-full text-sm"></div>
+                <div id="progressArea" class="hidden"><div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden"><div id="progressBar" class="bg-indigo-600 h-full w-0"></div></div></div>
+                <button id="saveBtn" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg">Post to Feed</button>
+                <button id="closeUpload" class="w-full text-slate-400 py-2">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyBYpA3phiRPlssjDmMp2u9_oqo3YcvQHaU",
             authDomain: "eu-summaryshare.firebaseapp.com",
@@ -74,97 +129,213 @@
             appId: "1:835602685197:web:ba7219fdeda1c55964e444"
         };
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore(), auth = firebase.auth();
+        const db = firebase.firestore(), storage = firebase.storage(), auth = firebase.auth();
 
         let allSummaries = [], userFavs = [], currentUserData = null;
 
+        // LEC GENERATOR
+        const lecs = document.querySelectorAll('#filterLecture, #docLecture');
+        for(let i=1; i<=50; i++) lecs.forEach(s => { const o = document.createElement('option'); o.value = i; o.innerText = `Lecture ${i}`; s.appendChild(o); });
+
+        // AUTH LISTENER
         auth.onAuthStateChanged(async user => {
             document.getElementById('logoutBtn').classList.toggle('hidden', !user);
             document.getElementById('profileBtn').classList.toggle('hidden', !user);
             if(user) {
-                const doc = await db.collection("users").doc(user.uid).get();
-                currentUserData = doc.data();
+                const userDoc = await db.collection("users").doc(user.uid).get();
+                currentUserData = userDoc.exists ? userDoc.data() : null;
                 userFavs = currentUserData?.favorites || [];
             }
-            fetchSummaries();
+            applyFilters();
         });
 
-        function fetchSummaries() {
-            db.collection("summaries").orderBy("timestamp", "desc").onSnapshot(snap => {
-                allSummaries = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                renderFeed(allSummaries);
-            });
-        }
+        db.collection("summaries").orderBy("timestamp", "desc").onSnapshot(snap => {
+            allSummaries = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            applyFilters();
+        });
 
+        // FEED RENDERER
         function renderFeed(items) {
             const feed = document.getElementById('feed');
-            feed.innerHTML = items.length ? '' : '<p class="text-center text-slate-400 py-10">No summaries found.</p>';
+            feed.innerHTML = items.length ? '' : '<div class="p-12 text-center text-slate-400">No summaries found.</div>';
             items.forEach(item => {
+                const isFav = userFavs.includes(item.id);
+                const isOwner = auth.currentUser?.uid === item.ownerId;
                 const card = document.createElement('div');
-                card.className = "bg-white p-5 rounded-2xl shadow-sm flex justify-between items-center";
+                card.className = "bg-white p-6 rounded-2xl shadow-sm border border-slate-50 transition-all hover:shadow-md";
                 card.innerHTML = `
-                    <div>
-                        <h3 class="font-bold text-slate-800">${item.title}</h3>
-                        <p class="text-xs text-slate-400">NAME: <span class="text-indigo-600 font-semibold">${item.authorName || 'Student'}</span></p>
-                    </div>
-                    <button class="bg-slate-100 p-2 rounded-lg text-slate-600"><i class="fas fa-download"></i></button>
-                `;
+                    <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-xl shrink-0"><i class="fas fa-file-pdf"></i></div>
+                            <div>
+                                <h3 class="font-bold text-slate-800">${item.title}</h3>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <span class="text-xs text-slate-400 uppercase font-bold">Name:</span>
+                                    <span class="text-xs text-indigo-600 font-bold">${item.authorName || 'Contributor'}</span>
+                                    <span class="text-[10px] bg-slate-100 text-slate-400 px-2 py-0.5 rounded-md"><i class="fas fa-download mr-1"></i>${item.downloads || 0}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 items-center">
+                            <button onclick="toggleFavorite('${item.id}')" class="p-2 text-slate-300 hover:text-red-400 transition ${isFav ? 'fav-active' : ''}"><i class="${isFav ? 'fas' : 'far'} fa-heart text-xl"></i></button>
+                            ${isOwner ? `<button onclick="deleteFile('${item.id}', '${item.fileUrl}')" class="text-red-400 p-2 hover:bg-red-50 rounded-lg"><i class="fas fa-trash-alt"></i></button>` : ''}
+                            <a href="https://docs.google.com/viewer?url=${encodeURIComponent(item.fileUrl)}&embedded=true" target="_blank" class="px-4 py-2 bg-slate-100 rounded-xl font-bold text-sm text-slate-600 hover:bg-slate-200">View</a>
+                            <button onclick="downloadWithCount('${item.id}', '${item.fileUrl}', '${item.title}.pdf', this)" class="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold text-sm shadow-md hover:bg-indigo-700 transition">Download</button>
+                        </div>
+                    </div>`;
                 feed.appendChild(card);
             });
         }
 
-        // Dashboard Linkage Fix
+        // PROFILE DASHBOARD
         function updateProfileList(tab = 'myUploads') {
-            const list = document.getElementById('profileList');
-            const user = auth.currentUser;
+            const list = document.getElementById('profileList'), user = auth.currentUser;
             if(!user) return;
-
-            // CRITICAL: Links the current user's UID to the ownerId of the uploads
-            const items = tab === 'myUploads' 
-                ? allSummaries.filter(s => s.ownerId === user.uid) 
-                : allSummaries.filter(s => userFavs.includes(s.id));
-
-            list.innerHTML = items.length ? '' : `<p class="text-center py-10 text-slate-400">Nothing here yet.</p>`;
+            const items = tab === 'myUploads' ? allSummaries.filter(s => s.ownerId === user.uid) : allSummaries.filter(s => userFavs.includes(s.id));
+            list.innerHTML = items.length ? '' : '<p class="text-center py-8 text-slate-400">No items found.</p>';
             items.forEach(item => {
                 const div = document.createElement('div');
-                div.className = "p-4 bg-slate-50 rounded-xl border flex justify-between items-center";
-                div.innerHTML = `<span class="font-bold text-slate-700">${item.title}</span><i class="fas fa-file-pdf text-indigo-500"></i>`;
+                div.className = "flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100";
+                div.innerHTML = `<div class="truncate mr-2"><p class="font-bold text-slate-700 text-sm truncate">${item.title}</p></div>
+                    <button onclick="downloadWithCount('${item.id}', '${item.fileUrl}', '${item.title}.pdf', this)" class="text-indigo-600 p-2"><i class="fas fa-download"></i></button>`;
                 list.appendChild(div);
             });
         }
 
-        // Edit Name Toggle
+        // --- NAME CHANGE FIX ---
         document.getElementById('editNameBtn').onclick = () => {
             const input = document.getElementById('profileNameInput');
-            input.disabled = false; input.focus();
-            input.classList.add('border-indigo-600');
+            input.disabled = false; input.classList.add('border-indigo-600'); input.focus();
             document.getElementById('editNameBtn').classList.add('hidden');
             document.getElementById('saveNameBtn').classList.remove('hidden');
         };
 
         document.getElementById('saveNameBtn').onclick = async () => {
-            const newName = document.getElementById('profileNameInput').value;
+            const input = document.getElementById('profileNameInput');
+            const newName = input.value.trim();
+            if(!newName) return;
+            
             try {
+                const btn = document.getElementById('saveNameBtn');
+                btn.innerHTML = '<i class="fas fa-circle-notch fa-spin text-xl"></i>'; // Loading icon
+                
                 await db.collection("users").doc(auth.currentUser.uid).update({ fullName: newName });
                 currentUserData.fullName = newName;
-                document.getElementById('profileNameInput').disabled = true;
-                document.getElementById('saveNameBtn').classList.add('hidden');
+                
+                input.disabled = true; input.classList.remove('border-indigo-600');
+                btn.classList.add('hidden'); btn.innerHTML = '<i class="fas fa-check-circle text-2xl"></i>';
                 document.getElementById('editNameBtn').classList.remove('hidden');
-                alert("Name saved!");
-            } catch(e) {
-                alert("Error: Check your Firebase Firestore Rules!");
+                applyFilters();
+            } catch(e) { 
+                alert("Permission Denied: Did you apply the new rules in Firebase Console?"); 
+                document.getElementById('saveNameBtn').innerHTML = '<i class="fas fa-check-circle text-2xl"></i>';
             }
         };
 
-        document.getElementById('profileBtn').onclick = () => {
-            document.getElementById('profileModal').classList.remove('hidden');
+        // UPLOAD LOGIC
+        document.getElementById('saveBtn').onclick = async () => {
+            const user = auth.currentUser;
+            const file = document.getElementById('docFile').files[0], title = document.getElementById('docTitle').value;
+            if (!user?.emailVerified) return alert("Verify your email first.");
+            if (!file || !title) return alert("Fields missing.");
+
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = true; btn.innerText = "Uploading...";
+            document.getElementById('progressArea').classList.remove('hidden');
+
+            try {
+                const ref = storage.ref(`summaries/${Date.now()}_${file.name}`);
+                const task = ref.put(file);
+                task.on('state_changed', s => { 
+                    document.getElementById('progressBar').style.width = (s.bytesTransferred/s.totalBytes)*100 + '%';
+                }, null, async () => {
+                    const url = await task.snapshot.ref.getDownloadURL();
+                    await db.collection("summaries").add({
+                        title, fileUrl: url, description: document.getElementById('docDesc').value,
+                        module: document.getElementById('docModule').value, subject: document.getElementById('docSubject').value,
+                        lecture: document.getElementById('docLecture').value, ownerId: user.uid,
+                        authorName: currentUserData?.fullName || "Student", downloads: 0, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    resetUploadUI();
+                    document.getElementById('uploadModal').classList.add('hidden');
+                });
+            } catch (err) { alert(err.message); resetUploadUI(); }
+        };
+
+        function resetUploadUI() {
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = false; btn.innerText = "Post to Feed";
+            document.getElementById('progressArea').classList.add('hidden');
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('docTitle').value = ""; document.getElementById('docFile').value = "";
+        }
+
+        async function downloadWithCount(id, url, filename, btn) {
+            db.collection("summaries").doc(id).update({ downloads: firebase.firestore.FieldValue.increment(1) });
+            try { const r = await fetch(url); const b = await r.blob(); const a = document.createElement('a'); a.href = window.URL.createObjectURL(b); a.download = filename; a.click(); } catch(e) {}
+        }
+
+        async function deleteFile(id, url) { if(confirm("Delete permanently?")) { await db.collection("summaries").doc(id).delete(); try { await storage.refFromURL(url).delete(); } catch(e){} } }
+
+        // AUTH ACTIONS
+        document.getElementById('signupBtnAction').onclick = async () => {
+            const name = document.getElementById('signupName').value, email = document.getElementById('signupEmail').value, pass = document.getElementById('signupPass').value;
+            if(!name || !email.endsWith('@nmu.edu.eg')) return alert("Use @nmu.edu.eg email!");
+            try { 
+                const c = await auth.createUserWithEmailAndPassword(email, pass);
+                await db.collection("users").doc(c.user.uid).set({ fullName: name, email, favorites: [] });
+                await c.user.sendEmailVerification(); alert("Verify your email!"); auth.signOut();
+                document.getElementById('authModal').classList.add('hidden');
+            } catch(e) { alert(e.message); }
+        };
+
+        document.getElementById('loginBtnAction').onclick = async () => {
+            try {
+                await auth.signInWithEmailAndPassword(document.getElementById('loginEmail').value, document.getElementById('loginPass').value);
+                if (!auth.currentUser.emailVerified) { alert("Verify email!"); auth.signOut(); }
+                else document.getElementById('authModal').classList.add('hidden');
+            } catch(e) { alert("Login failed."); }
+        };
+
+        async function toggleFavorite(id) {
+            if(!auth.currentUser) return alert("Login first.");
+            if(userFavs.includes(id)) userFavs = userFavs.filter(f => f !== id);
+            else userFavs.push(id);
+            await db.collection("users").doc(auth.currentUser.uid).update({ favorites: userFavs });
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            const mod = document.getElementById('filterModule').value, sub = document.getElementById('filterSubject').value;
+            const filtered = allSummaries.filter(i => {
+                const text = (i.title + (i.description || "")).toLowerCase().includes(term);
+                return text && (!mod || i.module === mod) && (!sub || i.subject === sub);
+            });
+            renderFeed(filtered);
+        }
+
+        // UI HELPERS
+        document.getElementById('profileBtn').onclick = () => { 
+            document.getElementById('profileModal').classList.remove('hidden'); 
             document.getElementById('profileNameInput').value = currentUserData?.fullName || "Student";
             updateProfileList('myUploads');
         };
-
-        document.getElementById('tabMyUploads').onclick = () => updateProfileList('myUploads');
-        document.getElementById('tabSaved').onclick = () => updateProfileList('saved');
-        document.getElementById('closeProfile').onclick = () => document.getElementById('profileModal').classList.add('hidden');
+        document.getElementById('tabMyUploads').onclick = (e) => { document.getElementById('tabSaved').className = "pb-2 border-b-2 border-transparent text-slate-400 font-bold text-sm"; e.target.className = "pb-2 border-b-2 border-indigo-600 text-indigo-600 font-bold text-sm"; updateProfileList('myUploads'); };
+        document.getElementById('tabSaved').onclick = (e) => { document.getElementById('tabMyUploads').className = "pb-2 border-b-2 border-transparent text-slate-400 font-bold text-sm"; e.target.className = "pb-2 border-b-2 border-indigo-600 text-indigo-600 font-bold text-sm"; updateProfileList('saved'); };
+        document.getElementById('tabLogin').onclick = () => { tabLogin.className = "flex-1 py-4 font-bold text-indigo-600 border-b-2 border-indigo-600"; tabSignup.className = "flex-1 py-4 font-bold text-slate-400 border-b-2 border-transparent"; loginForm.classList.remove('hidden'); signupForm.classList.add('hidden'); };
+        document.getElementById('tabSignup').onclick = () => { tabSignup.className = "flex-1 py-4 font-bold text-indigo-600 border-b-2 border-indigo-600"; tabLogin.className = "flex-1 py-4 font-bold text-slate-400 border-b-2 border-transparent"; signupForm.classList.remove('hidden'); loginForm.classList.add('hidden'); };
+        document.getElementById('closeAuth').onclick = () => document.getElementById('authModal').classList.add('hidden');
+        document.getElementById('closeUpload').onclick = () => document.getElementById('uploadModal').classList.add('hidden');
+        document.getElementById('closeProfile').onclick = () => {
+            document.getElementById('profileModal').classList.add('hidden');
+            document.getElementById('profileNameInput').disabled = true;
+            document.getElementById('saveNameBtn').classList.add('hidden');
+            document.getElementById('editNameBtn').classList.remove('hidden');
+        };
+        document.getElementById('logoutBtn').onclick = () => auth.signOut();
+        document.getElementById('mainUploadBtn').onclick = () => !auth.currentUser ? document.getElementById('authModal').classList.remove('hidden') : document.getElementById('uploadModal').classList.remove('hidden');
+        ['searchInput', 'filterModule', 'filterSubject'].forEach(id => document.getElementById(id).addEventListener('input', applyFilters));
     </script>
 </body>
 </html>
