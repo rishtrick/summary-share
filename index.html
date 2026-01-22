@@ -15,7 +15,6 @@
     <style>
         .hidden { display: none !important; }
         #progressBar { transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-        /* Smooth progress line for download button */
         .dl-bar { transition: width 0.2s linear; }
     </style>
 </head>
@@ -27,9 +26,9 @@
                 <div class="bg-indigo-600 p-1.5 rounded-lg text-white font-bold italic">SS</div>
                 <span class="font-bold text-xl text-slate-800">SummaryShare</span>
             </div>
-            <div class="flex items-center gap-3">
-                <button id="mainUploadBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold hover:bg-indigo-700 shadow-md transition">+ Upload</button>
-                <button id="logoutBtn" class="hidden text-slate-400 hover:text-red-500 px-2"><i class="fas fa-sign-out-alt text-xl"></i></button>
+            
+            <div id="nav-actions" class="flex items-center gap-3">
+                <div class="animate-pulse bg-slate-200 h-10 w-24 rounded-xl"></div>
             </div>
         </div>
     </nav>
@@ -117,11 +116,32 @@
             lecs.forEach(s => { const o = document.createElement('option'); o.value = i; o.innerText = `Lecture ${i}`; s.appendChild(o); });
         }
 
-        // Auth Listener
+        // --- DYNAMIC NAV BUTTONS LOGIC ---
         auth.onAuthStateChanged(user => {
-            document.getElementById('logoutBtn').classList.toggle('hidden', !user);
+            const navActions = document.getElementById('nav-actions');
+            if (user) {
+                // User is Signed In
+                navActions.innerHTML = `
+                    <button id="mainUploadBtn" onclick="openUpload()" class="bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold hover:bg-indigo-700 shadow-md transition">
+                        <i class="fas fa-plus mr-1"></i> Upload
+                    </button>
+                    <button onclick="auth.signOut()" class="text-slate-400 hover:text-red-500 px-2 transition">
+                        <i class="fas fa-sign-out-alt text-xl"></i>
+                    </button>
+                `;
+            } else {
+                // User is Signed Out
+                navActions.innerHTML = `
+                    <button onclick="openAuth()" class="bg-indigo-600 text-white px-5 py-2 rounded-xl font-bold hover:bg-indigo-700 shadow-md transition">
+                        Sign In
+                    </button>
+                `;
+            }
             renderFeed(allSummaries);
         });
+
+        function openAuth() { document.getElementById('authModal').classList.remove('hidden'); }
+        function openUpload() { document.getElementById('uploadModal').classList.remove('hidden'); }
 
         // Load Feed
         db.collection("summaries").orderBy("timestamp", "desc").onSnapshot(snap => {
@@ -138,8 +158,6 @@
                 const card = document.createElement('div');
                 card.className = "bg-white p-6 rounded-2xl shadow-sm border border-slate-50";
                 const isOwner = uid === item.ownerId;
-                
-                // Real Preview URL using Google Docs Viewer
                 const previewUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(item.fileUrl)}&embedded=true`;
 
                 card.innerHTML = `
@@ -159,7 +177,6 @@
                         <div class="flex gap-2 items-center">
                             ${isOwner ? `<button onclick="deleteFile('${item.id}', '${item.fileUrl}')" class="text-red-400 px-2 hover:bg-red-50 p-2 rounded-lg"><i class="fas fa-trash-alt"></i></button>` : ''}
                             <a href="${previewUrl}" target="_blank" class="px-4 py-2 bg-slate-100 rounded-xl font-bold text-sm text-slate-600 hover:bg-slate-200">View</a>
-                            
                             <button onclick="downloadWithProgress('${item.fileUrl}', '${item.title}.pdf', this)" 
                                     class="relative overflow-hidden px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold text-sm shadow-md min-w-[100px] hover:bg-indigo-700 transition">
                                 <span class="btn-text">Download</span>
@@ -173,54 +190,37 @@
             });
         }
 
-        // New Download with Progress Logic
         async function downloadWithProgress(url, filename, btn) {
             const textSpan = btn.querySelector('.btn-text');
             const progressBar = btn.querySelector('.dl-bar');
             const originalText = textSpan.innerText;
-            
             try {
                 btn.disabled = true;
                 const response = await fetch(url);
                 if (!response.ok) throw new Error('Network response was not ok');
-
                 const reader = response.body.getReader();
                 const contentLength = +response.headers.get('Content-Length');
-                
                 let receivedLength = 0;
                 let chunks = []; 
-                
                 while(true) {
                     const {done, value} = await reader.read();
                     if (done) break;
-
                     chunks.push(value);
                     receivedLength += value.length;
-
                     if (contentLength) {
                         const percent = Math.round((receivedLength / contentLength) * 100);
                         textSpan.innerText = percent + '%';
                         progressBar.style.width = percent + '%';
                     }
                 }
-
                 const blob = new Blob(chunks);
                 const blobUrl = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = blobUrl;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
+                a.href = blobUrl; a.download = filename; a.click();
                 window.URL.revokeObjectURL(blobUrl);
-                
                 textSpan.innerText = "Done!";
-                progressBar.style.width = '100%';
-
             } catch (err) {
-                console.error(err);
-                alert("Download failed. Make sure CORS is configured in Firebase.");
-                textSpan.innerText = "Error";
+                alert("Download failed.");
             } finally {
                 setTimeout(() => {
                     textSpan.innerText = originalText;
@@ -230,7 +230,6 @@
             }
         }
 
-        // Auth Actions
         document.getElementById('signupBtn').onclick = async () => {
             const email = document.getElementById('authEmail').value;
             const pass = document.getElementById('authPass').value;
@@ -244,30 +243,22 @@
             catch(e) { alert("Login failed."); }
         };
 
-        // Upload Action
         document.getElementById('saveBtn').onclick = async () => {
             const file = document.getElementById('docFile').files[0];
             const title = document.getElementById('docTitle').value;
             if (!file || !title) return alert("File and Title are required!");
-
             const btn = document.getElementById('saveBtn');
             btn.disabled = true;
             document.getElementById('progressArea').classList.remove('hidden');
-
             const ref = storage.ref(`summaries/${Date.now()}_${file.name}`);
             const task = ref.put(file);
-
             task.on('state_changed', 
                 s => { 
                     const p = (s.bytesTransferred / s.totalBytes) * 100;
                     document.getElementById('progressBar').style.width = p + '%';
                     document.getElementById('percentText').innerText = Math.round(p) + '%';
                 },
-                e => { 
-                    alert("Upload failed: " + e.message); 
-                    btn.disabled = false; 
-                    document.getElementById('progressArea').classList.add('hidden');
-                },
+                e => { alert("Upload failed: " + e.message); btn.disabled = false; },
                 async () => {
                     const url = await task.snapshot.ref.getDownloadURL();
                     try {
@@ -285,12 +276,9 @@
                         document.getElementById('docTitle').value = "";
                         document.getElementById('docDesc').value = "";
                         document.getElementById('docFile').value = "";
-                    } catch(err) {
-                        alert("Database error: Make sure you use @nmu.edu.eg email!");
-                    }
+                    } catch(err) { alert("Database error: Use @nmu.edu.eg email!"); }
                     btn.disabled = false;
                     document.getElementById('progressArea').classList.add('hidden');
-                    document.getElementById('progressBar').style.width = '0%';
                 }
             );
         };
@@ -314,11 +302,6 @@
             renderFeed(filtered);
         }
 
-        document.getElementById('mainUploadBtn').onclick = () => {
-            if(auth.currentUser) document.getElementById('uploadModal').classList.remove('hidden');
-            else document.getElementById('authModal').classList.remove('hidden');
-        };
-        document.getElementById('logoutBtn').onclick = () => auth.signOut();
         document.getElementById('closeAuth').onclick = () => document.getElementById('authModal').classList.add('hidden');
         document.getElementById('closeUpload').onclick = () => document.getElementById('uploadModal').classList.add('hidden');
         ['searchInput', 'filterModule', 'filterSubject'].forEach(id => document.getElementById(id).addEventListener('input', applyFilters));
